@@ -199,12 +199,14 @@ export function DocPage({
               strokeWidth="1.5"
               rx="2"
             />
-            {[
-              [bbox.x * W, bbox.y * H],
-              [(bbox.x + bbox.w) * W, bbox.y * H],
-              [bbox.x * W, (bbox.y + bbox.h) * H],
-              [(bbox.x + bbox.w) * W, (bbox.y + bbox.h) * H],
-            ].map(([cx, cy], i) => (
+            {(
+              [
+                [bbox.x * W, bbox.y * H],
+                [(bbox.x + bbox.w) * W, bbox.y * H],
+                [bbox.x * W, (bbox.y + bbox.h) * H],
+                [(bbox.x + bbox.w) * W, (bbox.y + bbox.h) * H],
+              ] as [number, number][]
+            ).map(([cx, cy], i) => (
               <rect
                 key={i}
                 x={cx - 2.5}
