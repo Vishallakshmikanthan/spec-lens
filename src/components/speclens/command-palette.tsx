@@ -60,13 +60,8 @@ export function CommandPalette({
   ];
 
   return (
-    <CommandDialog
-      open={open}
-      onOpenChange={onOpenChange}
-      title="SpecLens command palette"
-      description="Search commands, datasheets and evidence"
-    >
-      <CommandInput placeholder="Type a command or search…" />
+    <CommandDialog open={open} onOpenChange={onOpenChange}>
+      <CommandInput placeholder="Type a command or search…" aria-label="SpecLens command palette" />
       <CommandList>
         <CommandEmpty>No matching command.</CommandEmpty>
         <CommandGroup heading="Actions">
