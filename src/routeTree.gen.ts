@@ -14,6 +14,7 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
 import { Route as AppCollectionsRouteImport } from './routes/app.collections'
@@ -24,11 +25,16 @@ import { Route as AppDeveloperRouteImport } from './routes/app.developer'
 import { Route as AppEvidenceRouteImport } from './routes/app.evidence'
 import { Route as AppHelpRouteImport } from './routes/app.help'
 import { Route as AppHistoryRouteImport } from './routes/app.history'
+import { Route as AppJobsRouteImport } from './routes/app.jobs'
 import { Route as AppMonitorRouteImport } from './routes/app.monitor'
 import { Route as AppSearchRouteImport } from './routes/app.search'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
+import { Route as AppSymbolStudioRouteImport } from './routes/app.symbol-studio'
 import { Route as AppSymbolsRouteImport } from './routes/app.symbols'
 import { Route as AppUploadRouteImport } from './routes/app.upload'
+import { Route as AppComponentsMpnRouteImport } from './routes/app.components.$mpn'
+import { Route as AppDatasheetsDatasheetIdRouteImport } from './routes/app.datasheets.$datasheetId'
+import { Route as AppEvidenceEvidenceIdRouteImport } from './routes/app.evidence.$evidenceId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -53,6 +59,11 @@ const OnboardingRoute = OnboardingRouteImport.update({
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
@@ -105,6 +116,11 @@ const AppHistoryRoute = AppHistoryRouteImport.update({
   path: '/history',
   getParentRoute: () => AppRoute,
 } as any)
+const AppJobsRoute = AppJobsRouteImport.update({
+  id: '/jobs',
+  path: '/jobs',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMonitorRoute = AppMonitorRouteImport.update({
   id: '/monitor',
   path: '/monitor',
@@ -120,6 +136,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSymbolStudioRoute = AppSymbolStudioRouteImport.update({
+  id: '/symbol-studio',
+  path: '/symbol-studio',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSymbolsRoute = AppSymbolsRouteImport.update({
   id: '/symbols',
   path: '/symbols',
@@ -130,6 +151,22 @@ const AppUploadRoute = AppUploadRouteImport.update({
   path: '/upload',
   getParentRoute: () => AppRoute,
 } as any)
+const AppComponentsMpnRoute = AppComponentsMpnRouteImport.update({
+  id: '/$mpn',
+  path: '/$mpn',
+  getParentRoute: () => AppComponentsRoute,
+} as any)
+const AppDatasheetsDatasheetIdRoute =
+  AppDatasheetsDatasheetIdRouteImport.update({
+    id: '/$datasheetId',
+    path: '/$datasheetId',
+    getParentRoute: () => AppDatasheetsRoute,
+  } as any)
+const AppEvidenceEvidenceIdRoute = AppEvidenceEvidenceIdRouteImport.update({
+  id: '/$evidenceId',
+  path: '/$evidenceId',
+  getParentRoute: () => AppEvidenceRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -137,42 +174,54 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/register': typeof RegisterRoute
+  '/signup': typeof SignupRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/collections': typeof AppCollectionsRoute
-  '/app/components': typeof AppComponentsRoute
+  '/app/components': typeof AppComponentsRouteWithChildren
   '/app/copilot': typeof AppCopilotRoute
-  '/app/datasheets': typeof AppDatasheetsRoute
+  '/app/datasheets': typeof AppDatasheetsRouteWithChildren
   '/app/developer': typeof AppDeveloperRoute
-  '/app/evidence': typeof AppEvidenceRoute
+  '/app/evidence': typeof AppEvidenceRouteWithChildren
   '/app/help': typeof AppHelpRoute
   '/app/history': typeof AppHistoryRoute
+  '/app/jobs': typeof AppJobsRoute
   '/app/monitor': typeof AppMonitorRoute
   '/app/search': typeof AppSearchRoute
   '/app/settings': typeof AppSettingsRoute
+  '/app/symbol-studio': typeof AppSymbolStudioRoute
   '/app/symbols': typeof AppSymbolsRoute
   '/app/upload': typeof AppUploadRoute
   '/app/': typeof AppIndexRoute
+  '/app/components/$mpn': typeof AppComponentsMpnRoute
+  '/app/datasheets/$datasheetId': typeof AppDatasheetsDatasheetIdRoute
+  '/app/evidence/$evidenceId': typeof AppEvidenceEvidenceIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/register': typeof RegisterRoute
+  '/signup': typeof SignupRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/collections': typeof AppCollectionsRoute
-  '/app/components': typeof AppComponentsRoute
+  '/app/components': typeof AppComponentsRouteWithChildren
   '/app/copilot': typeof AppCopilotRoute
-  '/app/datasheets': typeof AppDatasheetsRoute
+  '/app/datasheets': typeof AppDatasheetsRouteWithChildren
   '/app/developer': typeof AppDeveloperRoute
-  '/app/evidence': typeof AppEvidenceRoute
+  '/app/evidence': typeof AppEvidenceRouteWithChildren
   '/app/help': typeof AppHelpRoute
   '/app/history': typeof AppHistoryRoute
+  '/app/jobs': typeof AppJobsRoute
   '/app/monitor': typeof AppMonitorRoute
   '/app/search': typeof AppSearchRoute
   '/app/settings': typeof AppSettingsRoute
+  '/app/symbol-studio': typeof AppSymbolStudioRoute
   '/app/symbols': typeof AppSymbolsRoute
   '/app/upload': typeof AppUploadRoute
   '/app': typeof AppIndexRoute
+  '/app/components/$mpn': typeof AppComponentsMpnRoute
+  '/app/datasheets/$datasheetId': typeof AppDatasheetsDatasheetIdRoute
+  '/app/evidence/$evidenceId': typeof AppEvidenceEvidenceIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -181,21 +230,27 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/register': typeof RegisterRoute
+  '/signup': typeof SignupRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/collections': typeof AppCollectionsRoute
-  '/app/components': typeof AppComponentsRoute
+  '/app/components': typeof AppComponentsRouteWithChildren
   '/app/copilot': typeof AppCopilotRoute
-  '/app/datasheets': typeof AppDatasheetsRoute
+  '/app/datasheets': typeof AppDatasheetsRouteWithChildren
   '/app/developer': typeof AppDeveloperRoute
-  '/app/evidence': typeof AppEvidenceRoute
+  '/app/evidence': typeof AppEvidenceRouteWithChildren
   '/app/help': typeof AppHelpRoute
   '/app/history': typeof AppHistoryRoute
+  '/app/jobs': typeof AppJobsRoute
   '/app/monitor': typeof AppMonitorRoute
   '/app/search': typeof AppSearchRoute
   '/app/settings': typeof AppSettingsRoute
+  '/app/symbol-studio': typeof AppSymbolStudioRoute
   '/app/symbols': typeof AppSymbolsRoute
   '/app/upload': typeof AppUploadRoute
   '/app/': typeof AppIndexRoute
+  '/app/components/$mpn': typeof AppComponentsMpnRoute
+  '/app/datasheets/$datasheetId': typeof AppDatasheetsDatasheetIdRoute
+  '/app/evidence/$evidenceId': typeof AppEvidenceEvidenceIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -205,6 +260,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/register'
+    | '/signup'
     | '/app/analytics'
     | '/app/collections'
     | '/app/components'
@@ -214,18 +270,24 @@ export interface FileRouteTypes {
     | '/app/evidence'
     | '/app/help'
     | '/app/history'
+    | '/app/jobs'
     | '/app/monitor'
     | '/app/search'
     | '/app/settings'
+    | '/app/symbol-studio'
     | '/app/symbols'
     | '/app/upload'
     | '/app/'
+    | '/app/components/$mpn'
+    | '/app/datasheets/$datasheetId'
+    | '/app/evidence/$evidenceId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
     | '/onboarding'
     | '/register'
+    | '/signup'
     | '/app/analytics'
     | '/app/collections'
     | '/app/components'
@@ -235,12 +297,17 @@ export interface FileRouteTypes {
     | '/app/evidence'
     | '/app/help'
     | '/app/history'
+    | '/app/jobs'
     | '/app/monitor'
     | '/app/search'
     | '/app/settings'
+    | '/app/symbol-studio'
     | '/app/symbols'
     | '/app/upload'
     | '/app'
+    | '/app/components/$mpn'
+    | '/app/datasheets/$datasheetId'
+    | '/app/evidence/$evidenceId'
   id:
     | '__root__'
     | '/'
@@ -248,6 +315,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/register'
+    | '/signup'
     | '/app/analytics'
     | '/app/collections'
     | '/app/components'
@@ -257,12 +325,17 @@ export interface FileRouteTypes {
     | '/app/evidence'
     | '/app/help'
     | '/app/history'
+    | '/app/jobs'
     | '/app/monitor'
     | '/app/search'
     | '/app/settings'
+    | '/app/symbol-studio'
     | '/app/symbols'
     | '/app/upload'
     | '/app/'
+    | '/app/components/$mpn'
+    | '/app/datasheets/$datasheetId'
+    | '/app/evidence/$evidenceId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -271,6 +344,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
   RegisterRoute: typeof RegisterRoute
+  SignupRoute: typeof SignupRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -308,6 +382,13 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/': {
@@ -380,6 +461,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppHistoryRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/jobs': {
+      id: '/app/jobs'
+      path: '/jobs'
+      fullPath: '/app/jobs'
+      preLoaderRoute: typeof AppJobsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/monitor': {
       id: '/app/monitor'
       path: '/monitor'
@@ -401,6 +489,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/symbol-studio': {
+      id: '/app/symbol-studio'
+      path: '/symbol-studio'
+      fullPath: '/app/symbol-studio'
+      preLoaderRoute: typeof AppSymbolStudioRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/symbols': {
       id: '/app/symbols'
       path: '/symbols'
@@ -415,22 +510,81 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppUploadRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/components/$mpn': {
+      id: '/app/components/$mpn'
+      path: '/$mpn'
+      fullPath: '/app/components/$mpn'
+      preLoaderRoute: typeof AppComponentsMpnRouteImport
+      parentRoute: typeof AppComponentsRoute
+    }
+    '/app/datasheets/$datasheetId': {
+      id: '/app/datasheets/$datasheetId'
+      path: '/$datasheetId'
+      fullPath: '/app/datasheets/$datasheetId'
+      preLoaderRoute: typeof AppDatasheetsDatasheetIdRouteImport
+      parentRoute: typeof AppDatasheetsRoute
+    }
+    '/app/evidence/$evidenceId': {
+      id: '/app/evidence/$evidenceId'
+      path: '/$evidenceId'
+      fullPath: '/app/evidence/$evidenceId'
+      preLoaderRoute: typeof AppEvidenceEvidenceIdRouteImport
+      parentRoute: typeof AppEvidenceRoute
+    }
   }
 }
+
+interface AppComponentsRouteChildren {
+  AppComponentsMpnRoute: typeof AppComponentsMpnRoute
+}
+
+const AppComponentsRouteChildren: AppComponentsRouteChildren = {
+  AppComponentsMpnRoute: AppComponentsMpnRoute,
+}
+
+const AppComponentsRouteWithChildren = AppComponentsRoute._addFileChildren(
+  AppComponentsRouteChildren,
+)
+
+interface AppDatasheetsRouteChildren {
+  AppDatasheetsDatasheetIdRoute: typeof AppDatasheetsDatasheetIdRoute
+}
+
+const AppDatasheetsRouteChildren: AppDatasheetsRouteChildren = {
+  AppDatasheetsDatasheetIdRoute: AppDatasheetsDatasheetIdRoute,
+}
+
+const AppDatasheetsRouteWithChildren = AppDatasheetsRoute._addFileChildren(
+  AppDatasheetsRouteChildren,
+)
+
+interface AppEvidenceRouteChildren {
+  AppEvidenceEvidenceIdRoute: typeof AppEvidenceEvidenceIdRoute
+}
+
+const AppEvidenceRouteChildren: AppEvidenceRouteChildren = {
+  AppEvidenceEvidenceIdRoute: AppEvidenceEvidenceIdRoute,
+}
+
+const AppEvidenceRouteWithChildren = AppEvidenceRoute._addFileChildren(
+  AppEvidenceRouteChildren,
+)
 
 interface AppRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
   AppCollectionsRoute: typeof AppCollectionsRoute
-  AppComponentsRoute: typeof AppComponentsRoute
+  AppComponentsRoute: typeof AppComponentsRouteWithChildren
   AppCopilotRoute: typeof AppCopilotRoute
-  AppDatasheetsRoute: typeof AppDatasheetsRoute
+  AppDatasheetsRoute: typeof AppDatasheetsRouteWithChildren
   AppDeveloperRoute: typeof AppDeveloperRoute
-  AppEvidenceRoute: typeof AppEvidenceRoute
+  AppEvidenceRoute: typeof AppEvidenceRouteWithChildren
   AppHelpRoute: typeof AppHelpRoute
   AppHistoryRoute: typeof AppHistoryRoute
+  AppJobsRoute: typeof AppJobsRoute
   AppMonitorRoute: typeof AppMonitorRoute
   AppSearchRoute: typeof AppSearchRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppSymbolStudioRoute: typeof AppSymbolStudioRoute
   AppSymbolsRoute: typeof AppSymbolsRoute
   AppUploadRoute: typeof AppUploadRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -439,16 +593,18 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAnalyticsRoute: AppAnalyticsRoute,
   AppCollectionsRoute: AppCollectionsRoute,
-  AppComponentsRoute: AppComponentsRoute,
+  AppComponentsRoute: AppComponentsRouteWithChildren,
   AppCopilotRoute: AppCopilotRoute,
-  AppDatasheetsRoute: AppDatasheetsRoute,
+  AppDatasheetsRoute: AppDatasheetsRouteWithChildren,
   AppDeveloperRoute: AppDeveloperRoute,
-  AppEvidenceRoute: AppEvidenceRoute,
+  AppEvidenceRoute: AppEvidenceRouteWithChildren,
   AppHelpRoute: AppHelpRoute,
   AppHistoryRoute: AppHistoryRoute,
+  AppJobsRoute: AppJobsRoute,
   AppMonitorRoute: AppMonitorRoute,
   AppSearchRoute: AppSearchRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppSymbolStudioRoute: AppSymbolStudioRoute,
   AppSymbolsRoute: AppSymbolsRoute,
   AppUploadRoute: AppUploadRoute,
   AppIndexRoute: AppIndexRoute,
@@ -462,6 +618,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
   RegisterRoute: RegisterRoute,
+  SignupRoute: SignupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

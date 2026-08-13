@@ -13,7 +13,10 @@ export const Route = createFileRoute("/onboarding")({
       { title: "Workspace setup — SpecLens" },
       { name: "description", content: "Set up your SpecLens workspace in three short steps." },
       { property: "og:title", content: "Workspace setup — SpecLens" },
-      { property: "og:description", content: "Choose focus areas and invite your engineering team." },
+      {
+        property: "og:description",
+        content: "Choose focus areas and invite your engineering team.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -44,7 +47,10 @@ function OnboardingPage() {
   const next = () => (step < steps.length - 1 ? setStep(step + 1) : void navigate({ to: "/app" }));
 
   return (
-    <AuthLayout heading="Set up your workspace" sub="Three quick steps — you can change everything later.">
+    <AuthLayout
+      heading="Set up your workspace"
+      sub="Three quick steps — you can change everything later."
+    >
       <ol className="mb-6 flex items-center gap-2" aria-label="Setup progress">
         {steps.map((s, i) => (
           <li key={s.key} className="flex flex-1 items-center gap-2">
@@ -77,9 +83,7 @@ function OnboardingPage() {
                   key={f}
                   type="button"
                   aria-pressed={on}
-                  onClick={() =>
-                    setSelected((s) => (on ? s.filter((x) => x !== f) : [...s, f]))
-                  }
+                  onClick={() => setSelected((s) => (on ? s.filter((x) => x !== f) : [...s, f]))}
                   className={cn(
                     "rounded-full border px-3 py-1.5 text-[12.5px] transition-colors",
                     on

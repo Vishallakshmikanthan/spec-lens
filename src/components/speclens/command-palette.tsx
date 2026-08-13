@@ -79,9 +79,7 @@ export function CommandPalette({
             <CommandItem key={d.id} onSelect={() => go(`/app/evidence?doc=${d.id}`)}>
               <FileSearch className="size-4 text-muted-foreground" />
               <span>{d.fileName}</span>
-              <span className="ml-auto font-mono text-[11px] text-muted-foreground">
-                {d.mpn}
-              </span>
+              <span className="ml-auto font-mono text-[11px] text-muted-foreground">{d.mpn}</span>
             </CommandItem>
           ))}
         </CommandGroup>

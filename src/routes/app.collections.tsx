@@ -9,9 +9,15 @@ export const Route = createFileRoute("/app/collections")({
   head: () => ({
     meta: [
       { title: "Collections — SpecLens" },
-      { name: "description", content: "Organize verified evidence, datasheets and components into research collections." },
+      {
+        name: "description",
+        content: "Organize verified evidence, datasheets and components into research collections.",
+      },
       { property: "og:title", content: "Collections — SpecLens" },
-      { property: "og:description", content: "Organize verified evidence, datasheets and components into research collections." },
+      {
+        property: "og:description",
+        content: "Organize verified evidence, datasheets and components into research collections.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -22,9 +28,19 @@ export const Route = createFileRoute("/app/collections")({
 function CollectionsPage() {
   return (
     <div>
-      <PageHeader title="Collections" subtitle="Organize verified evidence beyond a single search."
-        actions={<Button size="sm" onClick={() => toast.info("Creating collections requires the SpecLens backend.")}>
-          <Plus className="size-3.5" />New collection</Button>} />
+      <PageHeader
+        title="Collections"
+        subtitle="Organize verified evidence beyond a single search."
+        actions={
+          <Button
+            size="sm"
+            onClick={() => toast.info("Creating collections requires the SpecLens backend.")}
+          >
+            <Plus className="size-3.5" />
+            New collection
+          </Button>
+        }
+      />
       <div className="space-y-4 px-4 py-6 sm:px-6">
         <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {mockCollections.map((c) => (
@@ -36,7 +52,9 @@ function CollectionsPage() {
                 {c.datasheets} datasheets · {c.evidence} evidence · {c.components} components
               </p>
               <Button asChild size="sm" variant="secondary" className="mt-3 w-full">
-                <Link to="/app/evidence" search={{ doc: undefined, ev: undefined }}>Open collection</Link>
+                <Link to="/app/evidence" search={{ doc: undefined, ev: undefined }}>
+                  Open collection
+                </Link>
               </Button>
             </li>
           ))}

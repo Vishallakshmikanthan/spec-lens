@@ -11,7 +11,13 @@ const map: Record<IndexStatus, { label: string; cls: string }> = {
 export function StatusPill({ status, className }: { status: IndexStatus; className?: string }) {
   const s = map[status];
   return (
-    <span className={cn("inline-flex shrink-0 items-center gap-1.5 rounded-sm border px-2 py-0.5 text-[11px]", s.cls, className)}>
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center gap-1.5 rounded-sm border px-2 py-0.5 text-[11px]",
+        s.cls,
+        className,
+      )}
+    >
       {status === "indexing" && <span className="size-1.5 animate-pulse rounded-full bg-primary" />}
       {s.label}
     </span>

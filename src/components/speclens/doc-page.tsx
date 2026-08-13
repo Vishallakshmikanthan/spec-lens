@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
-import type { BoundingBox, EvidenceType } from "@/lib/speclens/types";
+import { BboxOverlay } from "@/features/evidence/bbox-overlay";
+import type { BoundingBox, EvidenceType } from "@/types/speclens";
 
 /**
  * Synthetic datasheet page renderer.
@@ -150,7 +151,13 @@ export function DocPage({
         >
           {mpn ?? "DATASHEET"}
         </text>
-        <text x={W - 14} y="17" textAnchor="end" className="fill-background/40" style={{ fontSize: 8 }}>
+        <text
+          x={W - 14}
+          y="17"
+          textAnchor="end"
+          className="fill-background/40"
+          style={{ fontSize: 8 }}
+        >
           {page ? `Page ${page}` : "SLxx"}
         </text>
 
@@ -168,7 +175,10 @@ export function DocPage({
         ))}
 
         {/* figure area */}
-        <g transform={`translate(58, ${44 + lines * 8}) scale(1.05)`} className="text-background/75">
+        <g
+          transform={`translate(58, ${44 + lines * 8}) scale(1.05)`}
+          className="text-background/75"
+        >
           <Figure type={type} />
         </g>
 
@@ -186,37 +196,7 @@ export function DocPage({
         ))}
 
         {bbox && (
-          <g>
-            <rect
-              x={bbox.x * W}
-              y={bbox.y * H}
-              width={bbox.w * W}
-              height={bbox.h * H}
-              className={cn(
-                "fill-primary/10 stroke-primary",
-                highlight && "animate-pulse-ring",
-              )}
-              strokeWidth="1.5"
-              rx="2"
-            />
-            {(
-              [
-                [bbox.x * W, bbox.y * H],
-                [(bbox.x + bbox.w) * W, bbox.y * H],
-                [bbox.x * W, (bbox.y + bbox.h) * H],
-                [(bbox.x + bbox.w) * W, (bbox.y + bbox.h) * H],
-              ] as [number, number][]
-            ).map(([cx, cy], i) => (
-              <rect
-                key={i}
-                x={cx - 2.5}
-                y={cy - 2.5}
-                width="5"
-                height="5"
-                className="fill-primary"
-              />
-            ))}
-          </g>
+          <BboxOverlay bbox={bbox} viewBox={{ width: W, height: H }} highlight={highlight} />
         )}
       </svg>
     </div>

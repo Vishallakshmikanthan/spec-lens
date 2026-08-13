@@ -13,7 +13,11 @@ import {
 import { SpecLensLogo } from "@/components/speclens/logo";
 import { DocPage } from "@/components/speclens/doc-page";
 import { Button } from "@/components/ui/button";
-import { ConfidenceBar, EvidenceTypeBadge, VerificationBadge } from "@/components/speclens/evidence-ui";
+import {
+  ConfidenceBar,
+  EvidenceTypeBadge,
+  VerificationBadge,
+} from "@/components/speclens/evidence-ui";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -24,7 +28,10 @@ export const Route = createFileRoute("/")({
         content:
           "SpecLens turns massive engineering datasheets into searchable, verifiable visual evidence with provenance and confidence.",
       },
-      { property: "og:title", content: "SpecLens — Visual Intelligence for Technical Specifications" },
+      {
+        property: "og:title",
+        content: "SpecLens — Visual Intelligence for Technical Specifications",
+      },
       {
         property: "og:description",
         content:
@@ -73,7 +80,14 @@ function PipelineViz() {
         ))}
       </div>
       <svg className="pointer-events-none absolute inset-y-6 left-[34px] w-px" aria-hidden="true">
-        <line x1="0" y1="0" x2="0" y2="100%" stroke="currentColor" className="flow-dash text-primary/40" />
+        <line
+          x1="0"
+          y1="0"
+          x2="0"
+          y2="100%"
+          stroke="currentColor"
+          className="flow-dash text-primary/40"
+        />
       </svg>
     </div>
   );
@@ -190,10 +204,19 @@ function Landing() {
       <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4 sm:px-6">
           <SpecLensLogo />
-          <nav className="ml-6 hidden items-center gap-5 text-[13px] text-muted-foreground md:flex" aria-label="Primary">
-            <a href="#preview" className="transition-colors hover:text-foreground">Product</a>
-            <a href="#capabilities" className="transition-colors hover:text-foreground">Capabilities</a>
-            <a href="#pipeline" className="transition-colors hover:text-foreground">Pipeline</a>
+          <nav
+            className="ml-6 hidden items-center gap-5 text-[13px] text-muted-foreground md:flex"
+            aria-label="Primary"
+          >
+            <a href="#preview" className="transition-colors hover:text-foreground">
+              Product
+            </a>
+            <a href="#capabilities" className="transition-colors hover:text-foreground">
+              Capabilities
+            </a>
+            <a href="#pipeline" className="transition-colors hover:text-foreground">
+              Pipeline
+            </a>
           </nav>
           <div className="ml-auto flex items-center gap-2">
             <Button asChild variant="ghost" size="sm">
@@ -234,7 +257,9 @@ function Landing() {
                   </Link>
                 </Button>
                 <Button asChild size="lg" variant="outline">
-                  <Link to="/app/search">View Demo</Link>
+                  <Link to="/app/search" search={{ q: "" }}>
+                    View Demo
+                  </Link>
                 </Button>
               </div>
               <dl className="mt-10 grid max-w-md grid-cols-3 gap-4 border-t border-border pt-6">

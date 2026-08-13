@@ -10,7 +10,10 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       { title: "Sign in — SpecLens" },
-      { name: "description", content: "Sign in to your SpecLens engineering intelligence workspace." },
+      {
+        name: "description",
+        content: "Sign in to your SpecLens engineering intelligence workspace.",
+      },
       { property: "og:title", content: "Sign in — SpecLens" },
       { property: "og:description", content: "Engineering intelligence, focused." },
       { property: "og:type", content: "website" },
@@ -55,7 +58,10 @@ function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   return (
-    <AuthLayout heading="Engineering intelligence, focused." sub="Sign in to your SpecLens workspace.">
+    <AuthLayout
+      heading="Engineering intelligence, focused."
+      sub="Sign in to your SpecLens workspace."
+    >
       <form
         className="space-y-4"
         onSubmit={(e) => {
@@ -66,7 +72,13 @@ function LoginPage() {
       >
         <div className="space-y-1.5">
           <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" required placeholder="you@company.com" autoComplete="email" />
+          <Input
+            id="email"
+            type="email"
+            required
+            placeholder="you@company.com"
+            autoComplete="email"
+          />
         </div>
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">

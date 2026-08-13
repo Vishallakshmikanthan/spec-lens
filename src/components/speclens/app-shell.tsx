@@ -200,7 +200,12 @@ function NotificationBell() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative min-h-9 min-w-9" aria-label={`Notifications (${unread} unread)`}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative min-h-9 min-w-9"
+          aria-label={`Notifications (${unread} unread)`}
+        >
           <Bell className="size-4" />
           {unread > 0 && (
             <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-primary" />
@@ -208,7 +213,9 @@ function NotificationBell() {
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0">
-        <div className="border-b border-border px-3 py-2 text-[12px] font-medium">Notifications</div>
+        <div className="border-b border-border px-3 py-2 text-[12px] font-medium">
+          Notifications
+        </div>
         <ul className="max-h-80 divide-y divide-border overflow-y-auto">
           {mockNotifications.map((n) => (
             <li key={n.id} className="flex gap-2.5 px-3 py-2.5">
@@ -263,7 +270,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-background/85 px-3 backdrop-blur-md sm:px-4">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden" aria-label="Open navigation">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden"
+                aria-label="Open navigation"
+              >
                 <Menu className="size-4" />
               </Button>
             </SheetTrigger>

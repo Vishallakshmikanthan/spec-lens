@@ -37,7 +37,10 @@ function RegisterPage() {
   const [role, setRole] = useState<UserRole>("Engineer");
 
   return (
-    <AuthLayout heading="Create your workspace" sub="Start indexing datasheets in the demo workspace.">
+    <AuthLayout
+      heading="Create your workspace"
+      sub="Start indexing datasheets in the demo workspace."
+    >
       <form
         className="space-y-4"
         onSubmit={(e) => {
@@ -51,7 +54,13 @@ function RegisterPage() {
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" required placeholder="you@company.com" autoComplete="email" />
+          <Input
+            id="email"
+            type="email"
+            required
+            placeholder="you@company.com"
+            autoComplete="email"
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="password">Password</Label>
