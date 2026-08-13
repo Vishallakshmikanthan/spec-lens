@@ -77,7 +77,7 @@ function NavLink({
 }: {
   item: NavItem;
   collapsed: boolean;
-  onNavigate?: () => void;
+  onNavigate?: (() => void) | undefined;
 }) {
   const link = (
     <Link
@@ -113,7 +113,7 @@ function SidebarBody({
   onNavigate,
 }: {
   collapsed: boolean;
-  onNavigate?: () => void;
+  onNavigate?: (() => void) | undefined;
 }) {
   const [workspace, setWorkspace] = useState(mockWorkspaces[0]!);
 
