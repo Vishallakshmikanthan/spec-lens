@@ -1,12 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Check, Loader2, Circle, XCircle, UploadCloud } from "lucide-react";
-import { PageHeader, DemoNotice } from "@/components/speclens/primitives";
+import { Check, Loader2, Circle, XCircle, CircleDashed, UploadCloud } from "lucide-react";
+import { PageHeader, DemoNotice, ErrorState } from "@/components/speclens/primitives";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { UPLOAD_STAGE_LABELS, type ProcessingJob } from "@/lib/speclens/stages";
-import { DEMO_MODE } from "@/lib/speclens/config";
+import { UPLOAD_STAGE_LABELS } from "@/lib/speclens/stages";
+import type { UploadStageKey } from "@/lib/speclens/stages";
+import { ProcessingJob } from "@/types/speclens";
 import type { JobStage } from "@/types/speclens";
+import { DEMO_MODE } from "@/lib/speclens/config";
 
 const MAX_FILE_SIZE = 200 * 1024 * 1024;
 
@@ -34,12 +36,7 @@ export const Route = createFileRoute("/app/upload")({
 
 function UploadPage() {
   const [file, setFile] = useState<{ name: string; sizeMb: number } | null>(null);
-  const [job, setJob] = useState<{
-    id: string;
-    status: string;
-    stages: JobStage[];
-    progress: number;
-  } | null>(null);
+  const [job, setJob] = useState<ProcessingJob | null>(null);
   const [drag, setDrag] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -58,6 +55,7 @@ function UploadPage() {
   };
 
   const [error, setError] = useState<string | null>(null);
+  const [stage, setStage] = useState(0);
 
   useEffect(() => {
     if (!job) return;

@@ -10,6 +10,7 @@ import {
   VerificationBadge,
 } from "@/components/speclens/evidence-ui";
 import { BboxOverlay } from "@/features/evidence/bbox-overlay";
+import type { BoundingBox } from "@/types/speclens";
 import { mockEvidence } from "@/lib/speclens/mock-data";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";

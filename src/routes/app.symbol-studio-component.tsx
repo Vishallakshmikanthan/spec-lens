@@ -213,17 +213,25 @@ function SymbolStudio() {
               </Section>
               <Section title="Pins">
                 <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border">
-                  {spec.pins.map((p: { number: string; name: string; electrical: string; side: string; evidenceId: string }) => (
-                    <li
-                      key={p.number}
-                      className="flex items-center gap-3 bg-surface px-3 py-2 font-mono text-[11.5px]"
-                    >
-                      <span className="w-4 text-muted-foreground">{p.number}</span>
-                      <span className="flex-1">{p.name}</span>
-                      <span className="text-muted-foreground">{p.electrical}</span>
-                      <span className="text-primary">{p.evidenceId}</span>
-                    </li>
-                  ))}
+                  {spec.pins.map(
+                    (p: {
+                      number: string;
+                      name: string;
+                      electrical: string;
+                      side: string;
+                      evidenceId: string;
+                    }) => (
+                      <li
+                        key={p.number}
+                        className="flex items-center gap-3 bg-surface px-3 py-2 font-mono text-[11.5px]"
+                      >
+                        <span className="w-4 text-muted-foreground">{p.number}</span>
+                        <span className="flex-1">{p.name}</span>
+                        <span className="text-muted-foreground">{p.electrical}</span>
+                        <span className="text-primary">{p.evidenceId}</span>
+                      </li>
+                    ),
+                  )}
                 </ul>
               </Section>
               <Section title="Evidence">

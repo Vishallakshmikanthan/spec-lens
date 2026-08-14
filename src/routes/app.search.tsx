@@ -52,7 +52,7 @@ function VisualSearch() {
   const [data, setData] = useState<SearchResultSet | null>(null);
   const [loading, setLoading] = useState(false);
   const [retrievalStage, setRetrievalStage] = useState<
-    "query" | "candidates" | "ranking" | "verify"
+    "query" | "candidates" | "ranking" | "verify" | null
   >(null);
 
   useEffect(() => {

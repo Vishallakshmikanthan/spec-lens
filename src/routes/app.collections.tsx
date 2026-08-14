@@ -5,7 +5,15 @@ import { cn } from "@/lib/utils";
 import { mockCollections, mockEvidence } from "@/lib/speclens/mock-data";
 import type { Collection, Evidence } from "@/types/speclens";
 import { PageHeader, DemoNotice } from "@/components/speclens/primitives";
-import { Drawer, DrawerOverlay, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerClose } from "@/components/ui/drawer";
+import {
+  Drawer,
+  DrawerOverlay,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+  DrawerClose,
+} from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -38,9 +46,15 @@ function CollectionsPage() {
     description: "",
   });
   const [deleteTarget, setDeleteTarget] = useState<Collection | null>(null);
-  const [addEvidenceTarget, setAddEvidenceTarget] = useState<{ collection: Collection; evidence: Evidence } | null>(null);
+  const [addEvidenceTarget, setAddEvidenceTarget] = useState<{
+    collection: Collection;
+    evidence: Evidence;
+  } | null>(null);
   const [removeEvidenceTarget, setRemoveEvidenceTarget] = useState<string | null>(null);
-  const [confirmAction, setConfirmAction] = useState<{ type: "delete" | "rename"; collection: Collection } | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{
+    type: "delete" | "rename";
+    collection: Collection;
+  } | null>(null);
 
   // Derive evidence count from collections' evidence tracking
   const getEvidenceCount = (col: Collection): number => {
@@ -51,10 +65,25 @@ function CollectionsPage() {
   };
 
   // Handle adding evidence to a collection
-  const handleAddEvidence = useCallback((ev: Evidence) => {
-    const found = collections.find((c) => c.id === ev.id);
-    setAddEvidenceTarget({ collection: found || { id: "", name: "", description: "", datasheets: 0, evidence: 0, components: 0 } as Collection, evidence: ev });
-  }, [collections]);
+  const handleAddEvidence = useCallback(
+    (ev: Evidence) => {
+      const found = collections.find((c) => c.id === ev.id);
+      setAddEvidenceTarget({
+        collection:
+          found ||
+          ({
+            id: "",
+            name: "",
+            description: "",
+            datasheets: 0,
+            evidence: 0,
+            components: 0,
+          } as Collection),
+        evidence: ev,
+      });
+    },
+    [collections],
+  );
 
   const [openDrawer, setOpenDrawer] = useState(false);
   const [drawerTitle, setDrawerTitle] = useState("New collection");
@@ -100,7 +129,16 @@ function CollectionsPage() {
   const handleRenameSubmit = useCallback(() => {
     if (!newCollection.name.trim() || !editingCollection) return;
     setCollections((prev) =>
-      prev.map((c) => (c.id === editingCollection.id ? { ...c, name: newCollection.name, description: newCollection.description || "", updatedAt: new Date().toISOString() } : c)),
+      prev.map((c) =>
+        c.id === editingCollection.id
+          ? {
+              ...c,
+              name: newCollection.name,
+              description: newCollection.description || "",
+              updatedAt: new Date().toISOString(),
+            }
+          : c,
+      ),
     );
     setEditingCollection(null);
     setOpenDrawer(false);
@@ -157,10 +195,7 @@ function CollectionsPage() {
         title="Collections"
         subtitle="Organize verified evidence beyond a single search."
         actions={
-          <Button
-            size="sm"
-            onClick={openNewCollectionDrawer}
-          >
+          <Button size="sm" onClick={openNewCollectionDrawer}>
             <Plus className="size-3.5 mr-2" /> New collection
           </Button>
         }
@@ -174,7 +209,9 @@ function CollectionsPage() {
               <DrawerClose onClick={closeDrawer} />
               <DrawerTitle>{drawerTitle}</DrawerTitle>
               <DrawerDescription>
-                {editingCollection ? `Rename "${editingCollection.name}"` : "Enter a name for your new collection"}
+                {editingCollection
+                  ? `Rename "${editingCollection.name}"`
+                  : "Enter a name for your new collection"}
               </DrawerDescription>
             </DrawerHeader>
 
@@ -199,12 +236,15 @@ function CollectionsPage() {
                   </label>
                   <textarea
                     value={newCollection.description || ""}
-                    onChange={(e) => setNewCollection({ ...newCollection, description: e.target.value })}
+                    onChange={(e) =>
+                      setNewCollection({ ...newCollection, description: e.target.value })
+                    }
                     rows={3}
                     placeholder="Brief description of the collection's focus"
                     className="w-full rounded-border border-border px-3 py-2 focus:border-primary resize-y"
-                  /></div>
-                )}
+                  />
+                </div>
+              )}
               <div className="space-y-2">
                 {editingCollection && (
                   <button
@@ -261,7 +301,9 @@ function CollectionsPage() {
                   asChild
                   size="icon"
                   variant="ghost"
-                  onClick={() => setAddEvidenceTarget({ collection, evidence: mockEvidence[0] as Evidence })}
+                  onClick={() =>
+                    setAddEvidenceTarget({ collection, evidence: mockEvidence[0] as Evidence })
+                  }
                 >
                   <Check className="size-3.5" />
                 </Button>
@@ -293,7 +335,7 @@ function CollectionsPage() {
                   <DrawerOverlay className="bg-black/40" />
                   <DrawerContent className="sm:max-w-md pt-6">
                     <DrawerHeader>
-<DrawerClose onClick={closeDrawer} />
+                      <DrawerClose onClick={closeDrawer} />
                       <DrawerTitle>Add Evidence</DrawerTitle>
                       <DrawerDescription>
                         Add {addEvidenceTarget.evidence.title} to "{collection.name}"?
@@ -307,7 +349,10 @@ function CollectionsPage() {
                         </div>
                         <div>
                           <p className="font-medium">{addEvidenceTarget.evidence.title}</p>
-                          <p className="text-[10px] text-muted-foreground">{addEvidenceTarget.evidence.type} · Page {addEvidenceTarget.evidence.page}</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {addEvidenceTarget.evidence.type} · Page{" "}
+                            {addEvidenceTarget.evidence.page}
+                          </p>
                         </div>
                       </div>
 
@@ -355,7 +400,9 @@ function CollectionsPage() {
               )}
 
               <Button asChild size="sm" variant="secondary" className="mt-2 w-full">
-                <Link to="/app/evidence" search={{ doc: undefined, ev: undefined }}>Open collection</Link>
+                <Link to="/app/evidence" search={{ doc: undefined, ev: undefined }}>
+                  Open collection
+                </Link>
               </Button>
             </li>
           ))}

@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { BboxOverlay } from "@/features/evidence/bbox-overlay";
 import type { BoundingBox, EvidenceType } from "@/types/speclens";
+import { Figure } from "@/components/speclens/figures";
 
 /**
  * Synthetic datasheet page renderer.

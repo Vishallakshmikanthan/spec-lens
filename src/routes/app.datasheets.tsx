@@ -42,9 +42,9 @@ function Library() {
   const [favOnly, setFavOnly] = useState(false);
   const [sort, setSort] = useState<"updated" | "evidence" | "pages">("updated");
   const [filterManufacturer, setFilterManufacturer] = useState<string | undefined>(undefined);
-  const [filterStatus, setFilterStatus] = useState<"indexed" | "indexing" | "queued" | "failed">(
-    undefined,
-  );
+  const [filterStatus, setFilterStatus] = useState<
+    "indexed" | "indexing" | "queued" | "failed" | undefined
+  >(undefined);
   const [filterCollection, setFilterCollection] = useState<string | undefined>(undefined);
 
   let items = mockDatasheets.filter((d) =>
@@ -249,7 +249,7 @@ function Library() {
                   className="flex items-center gap-3"
                 >
                   <span className="w-12 shrink-0">
-                    <DocPage type="pinout" mpn={d.mpn} dense className="size-6" />
+                    <DocPage type="pinout" mpn={d.mpn} className="size-6" />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[12px] font-medium">

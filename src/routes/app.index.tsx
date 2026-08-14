@@ -276,7 +276,7 @@ function CommandCenter() {
                   style={{ animationDelay: `${i * 70}ms` }}
                 >
                   <span className="w-[72px] shrink-0">
-                    <DocPage type="pinout" mpn={d.mpn} dense />
+                    <DocPage type="pinout" mpn={d.mpn} />
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="flex items-start justify-between gap-2">

@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { EvidenceGraph } from "@/components/speclens/evidence-graph";
 import { PageHeader } from "@/components/speclens/primitives";
+import { DemoNotice } from "@/components/speclens/primitives";
 
 export const Route = createFileRoute("/app/evidence-graph")({
   head: () => ({
@@ -25,10 +26,7 @@ export const Route = createFileRoute("/app/evidence-graph")({
 function EvidenceGraphPage() {
   return (
     <div>
-      <PageHeader
-        title="Evidence Graph"
-        subtitle="Technical relationship graph for LM358"
-      />
+      <PageHeader title="Evidence Graph" subtitle="Technical relationship graph for LM358" />
       <EvidenceGraph />
       <DemoNotice />
     </div>
