@@ -243,12 +243,7 @@ function EvidenceExplorer() {
           </div>
 
           <div className="panel space-y-3 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <span className="label-mono">Confidence</span>
-              <span className="font-mono text-[12px]">
-                {(evidence.confidence * 100).toFixed(1)}%
-              </span>
-            </div>
+            <span className="label-mono">Confidence</span>
             <ConfidenceBar value={evidence.confidence} />
             <div className="flex items-center justify-between gap-2 border-t border-border pt-3">
               <VerificationBadge state={evidence.verification} />
