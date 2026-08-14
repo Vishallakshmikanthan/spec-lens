@@ -30,15 +30,24 @@ export interface RequestOptions {
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { method = "GET", body, headers, signal } = options;
 
+  const contentType = headers?.["Content-Type"];
+  const isFormData = body instanceof FormData;
+
   const init: RequestInit = {
     method,
     headers: {
-      "Content-Type": "application/json",
       ...headers,
     },
   };
   if (signal) init.signal = signal;
-  if (body !== undefined) init.body = JSON.stringify(body);
+  if (body !== undefined) {
+    if (isFormData) {
+      init.body = body;
+    } else {
+      init.headers!["Content-Type"] = "application/json";
+      init.body = JSON.stringify(body);
+    }
+  }
 
   const response = await fetch(`${API_BASE}${path}`, init);
 

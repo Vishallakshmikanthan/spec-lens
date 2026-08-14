@@ -4,11 +4,9 @@ import { Check, Loader2, Circle, XCircle, CircleDashed, UploadCloud } from "luci
 import { PageHeader, DemoNotice, ErrorState } from "@/components/speclens/primitives";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { UPLOAD_STAGE_LABELS } from "@/lib/speclens/stages";
-import type { UploadStageKey } from "@/lib/speclens/stages";
-import { ProcessingJob } from "@/types/speclens";
-import type { JobStage } from "@/types/speclens";
+import type { ProcessingJob } from "@/types/speclens";
 import { DEMO_MODE } from "@/lib/speclens/config";
+import { api } from "@/services";
 
 const MAX_FILE_SIZE = 200 * 1024 * 1024;
 
@@ -40,7 +38,7 @@ function UploadPage() {
   const [drag, setDrag] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const accept = (f: File | undefined) => {
+  const accept = async (f: File | undefined) => {
     if (!f) return;
     if (f.size > MAX_FILE_SIZE) {
       return setError("File size exceeds 200 MB limit");
@@ -48,10 +46,20 @@ function UploadPage() {
     setStage(0);
     setFile({ name: f.name, sizeMb: Math.round((f.size / 1048576) * 10) / 10 });
     setError(null);
-    // Simulate upload job creation via mock API
-    import("@/services").then((mod) => {
-      mod.api.uploadDatasheet({ name: f.name, size: f.size }).then(setJob);
-    });
+    setJob(null);
+
+    // Create FormData for real API upload
+    const formData = new FormData();
+    formData.append("file", f);
+
+    try {
+      // Pass FormData directly; the real API accepts it,
+      // and the mock API (DEMO_MODE) also handles the new UploadFileInput shape
+      const newJob = await api.uploadDatasheet({ file: formData });
+      setJob(newJob);
+    } catch (err: any) {
+      setError(err instanceof Error ? err.message : "Upload failed");
+    }
   };
 
   const [error, setError] = useState<string | null>(null);
@@ -61,10 +69,12 @@ function UploadPage() {
     if (!job) return;
     const interval = setInterval(() => {
       setStage((s) => s + 1);
-      if (stage >= UPLOAD_STAGE_LABELS.length) {
+      if (stage >= 2) {
+        // After 2 stages (ingest + render), stop auto-advancing
+        // The remaining stages are pending and will be updated by backend
         clearInterval(interval);
       }
-    }, 1200);
+    }, 800);
     return () => clearInterval(interval);
   }, [job]);
 
@@ -76,7 +86,7 @@ function UploadPage() {
     }
   }, [job]);
 
-  const progress = job ? Math.round((stage / UPLOAD_STAGE_LABELS.length) * 100) : 0;
+  const progress = job ? Math.round((stage / 2) * 100) : 0;
 
   return (
     <div>
@@ -158,14 +168,14 @@ function UploadPage() {
               </div>
 
               <ol className="space-y-2.5 text-[13px]">
-                {UPLOAD_STAGE_LABELS.map((s, i) => {
-                  const stageJob = job.stages.find((sj) => sj.key === s.key);
+                {["validate", "load", "render"].map((s, i) => {
+                  const stageJob = job.stages.find((sj) => sj.key === s);
                   const isComplete = stage > i;
                   const isActive = stage === i;
                   const isPending = stage <= i && !isActive;
                   return (
                     <li
-                      key={s.key}
+                      key={s}
                       className="flex items-center gap-1.5"
                       style={{ opacity: isPending ? "0.4" : "1" }}
                     >

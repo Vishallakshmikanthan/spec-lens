@@ -80,8 +80,11 @@ export const realApi: SpecLensApi = {
       parseResponse(data, DatasheetSchema, `getDatasheet/${id}`),
     ),
 
-  uploadDatasheet: (file) =>
-    request<ProcessingJob>("/datasheets/upload", { method: "POST", body: file }).then((data) =>
+  uploadDatasheet: (file: UploadFileInput) =>
+    request<ProcessingJob>("/datasheets/upload", {
+      method: "POST",
+      body: file.file instanceof FormData ? file.file : new FormData().append("file", file.name ? new File([], file.name, { type: "application/pdf" }) : new File([], "uploaded.pdf", { type: "application/pdf" })),
+    }).then((data) =>
       parseResponse(data, ProcessingJobSchema, `uploadDatasheet`),
     ),
 

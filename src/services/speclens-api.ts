@@ -48,8 +48,11 @@ import type {
 } from "@/types/speclens";
 
 export interface UploadFileInput {
-  name: string;
-  size: number;
+  /** FormData for real API multipart/upload */
+  file?: FormData;
+  /** Legacy file info for mock API */
+  name?: string;
+  size?: number;
 }
 
 export interface SpecLensApi {

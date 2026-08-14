@@ -1,11 +1,35 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Check, CircleDashed, Loader2, XCircle } from "lucide-react";
 import { PageHeader, DemoNotice, ErrorState } from "@/components/speclens/primitives";
-import { mockJobs } from "@/lib/speclens/mock-data";
-import { cn } from "@/lib/utils";
+import { DEMO_MODE } from "@/lib/speclens/config";
+import { api } from "@/services";
 
 const displayedJobsFileNames = ["LM358.pdf", "TPS5430.pdf", "OPA197.pdf"];
+
+function formatDuration(startedAt: string | undefined): string {
+  if (!startedAt) return "Not started";
+  const start = new Date(startedAt).getTime();
+  const now = Date.now();
+  const elapsedMs = now - start;
+  const totalSeconds = Math.floor(elapsedMs / 1000);
+  if (totalSeconds < 60) {
+    return `${totalSeconds}s ago`;
+  }
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  if (minutes < 60) {
+    return `${minutes}m ${seconds}s ago`;
+  }
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return `${hours}h ${remainingMinutes}m ago`;
+}
+
+function getDisplayedJobs(jobs: any[]): any[] {
+  if (displayedJobsFileNames.length === 0) return jobs;
+  return jobs.filter((j) => displayedJobsFileNames.includes(j.fileName));
+}
 
 export const Route = createFileRoute("/app/monitor")({
   head: () => ({
@@ -30,10 +54,72 @@ export const Route = createFileRoute("/app/monitor")({
 });
 
 function MonitorPage() {
-  const filteredJobs = mockJobs.filter((j) => displayedJobsFileNames.includes(j.fileName));
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [pollInterval, setPollInterval] = useState<NodeJS.Timeout | null>(null);
 
-  const [selected, setSelected] = useState(filteredJobs[0]!.id);
-  const job = filteredJobs.find((j) => j.id === selected)!;
+  // Fetch jobs from real API or mock depending on DEMO_MODE
+  useEffect(() => {
+    let cancelled = false;
+
+    if (DEMO_MODE) {
+      // Use mock data in demo mode
+      import("@/mock/data").then((mod) => {
+        if (cancelled) return;
+        const mockJobs = mod.mockJobs;
+        setJobs(getDisplayedJobs(mockJobs));
+      });
+    } else {
+      // Fetch from real API
+      fetchRealJobs();
+    }
+
+    return () => {
+      cancelled = true;
+      if (pollInterval) clearInterval(pollInterval);
+    };
+  }, []);
+
+  // Real API polling
+  async function fetchRealJobs() {
+    try {
+      const realJobs = await api.listJobs();
+      setJobs(getDisplayedJobs(realJobs));
+    } catch (err) {
+      console.error("Failed to fetch jobs:", err);
+    }
+  }
+
+  useEffect(() => {
+    // Poll for job status updates when we have jobs
+    if (jobs.length === 0) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const realJobs = await api.listJobs();
+        setJobs(getDisplayedJobs(realJobs));
+      } catch (err) {
+        console.error("Poll failed:", err);
+      }
+    }, 3000); // 3 second polling interval
+
+    setPollInterval(interval);
+    return () => clearInterval(interval);
+  }, [jobs]);
+
+  const job = jobs.find((j) => j.id === selectedJobId) || jobs[0];
+
+  if (!job) {
+    return (
+      <div>
+        <PageHeader
+          title="Processing Monitor"
+          subtitle="Ingestion and indexing jobs across the workspace."
+        />
+        <p className="text-muted-foreground">No jobs found.</p>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -43,14 +129,14 @@ function MonitorPage() {
       />
       <div className="grid gap-0 lg:grid-cols-[320px_1fr]">
         <ul className="divide-y divide-border border-b border-border lg:border-b-0 lg:border-r">
-          {filteredJobs.map((j) => (
+          {jobs.map((j) => (
             <li key={j.id}>
               <button
-                onClick={() => setSelected(j.id)}
-                aria-pressed={j.id === selected}
+                onClick={() => setSelectedJobId(j.id)}
+                aria-pressed={j.id === selectedJobId}
                 className={cn(
                   "w-full px-4 py-3 text-left transition-colors hover:bg-surface",
-                  j.id === selected && "bg-surface",
+                  j.id === selectedJobId && "bg-surface",
                 )}
               >
                 <div className="flex items-center justify-between gap-2">
@@ -86,7 +172,7 @@ function MonitorPage() {
           <div>
             <h2 className="font-mono text-[15px]">{job.fileName}</h2>
             <p className="text-[12.5px] text-muted-foreground">
-              {job.mpn} · {job.pages} pages · {job.sizeMb} MB · started {job.startedAt} ·{" "}
+              {job.mpn} · {job.pages} pages · {job.sizeMb} MB · started {formatDuration(job.startedAt)} ·{" "}
               {job.duration}
             </p>
           </div>

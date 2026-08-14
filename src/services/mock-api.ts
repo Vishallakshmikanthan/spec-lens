@@ -34,6 +34,7 @@ import type {
   SearchFilters,
   SearchResultSet,
   SymbolSpec,
+  UploadFileInput,
 } from "@/types/speclens";
 import type { SpecLensApi } from "./speclens-api";
 
@@ -54,16 +55,22 @@ export const mockApi: SpecLensApi = {
     return mockDatasheets.find((d) => d.id === id);
   },
 
-  async uploadDatasheet(file: { name: string; size: number }): Promise<ProcessingJob> {
+  async uploadDatasheet(file: UploadFileInput): Promise<ProcessingJob> {
     await delay(220);
+    const formData = file.file instanceof FormData ? file.file : new FormData();
+    // If using legacy format, append a default file
+    if (file.name && file.size !== undefined) {
+      const dummyFile = new File([], file.name, { type: "application/pdf" });
+      formData.append("file", dummyFile);
+    }
     return {
       id: `job_${Math.random().toString(36).slice(2, 8)}`,
-      fileName: file.name,
-      mpn: file.name.replace(/\.pdf$/i, "").toUpperCase(),
+      fileName: file.name || "uploaded.pdf",
+      mpn: (file.name || "uploaded.pdf").replace(/\.pdf$/i, "").toUpperCase(),
       status: "processing",
       progress: 0,
       pages: 0,
-      sizeMb: Math.round((file.size / 1024 / 1024) * 10) / 10,
+      sizeMb: 0,
       startedAt: new Date().toISOString(),
       duration: "processing",
       stages: [
