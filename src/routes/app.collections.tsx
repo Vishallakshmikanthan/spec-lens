@@ -298,7 +298,6 @@ function CollectionsPage() {
               <div className="mt-3 flex gap-2">
                 {/* Add Evidence button */}
                 <Button
-                  asChild
                   size="icon"
                   variant="ghost"
                   onClick={() =>
@@ -310,7 +309,6 @@ function CollectionsPage() {
 
                 {/* Rename button */}
                 <Button
-                  asChild
                   size="sm"
                   variant="secondary"
                   onClick={() => openRenameDrawer(collection)}
@@ -320,7 +318,6 @@ function CollectionsPage() {
 
                 {/* Delete button */}
                 <Button
-                  asChild
                   size="sm"
                   variant="destructive"
                   onClick={() => openDeleteConfirm(collection)}
@@ -384,7 +381,6 @@ function CollectionsPage() {
                   </p>
                   <div className="flex gap-2 flex-wrap mt-2">
                     <Button
-                      asChild
                       size="icon"
                       variant="ghost"
                       onClick={() => setRemoveEvidenceTarget(null)}
