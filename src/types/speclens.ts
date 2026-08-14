@@ -209,6 +209,33 @@ export interface CopilotMessage {
   pending?: boolean;
 }
 
+export interface SourceReference {
+  evidenceId: string;
+  page: number;
+  label: string;
+  confidence: number;
+}
+
+export interface EvidenceCitation {
+  source: SourceReference;
+  excerpt?: string;
+  relevance: number;
+}
+
+export interface CopilotAnswer {
+  id: string;
+  role: "assistant";
+  content: string;
+  sources: SourceReference[];
+  confidence: number;
+  pending?: boolean;
+}
+
+export interface CopilotService {
+  ask(question: string): Promise<CopilotAnswer>;
+  getSuggestedQuestions(): Promise<string[]>;
+}
+
 export interface SymbolPin {
   number: string;
   name: string;

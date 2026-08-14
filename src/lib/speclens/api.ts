@@ -3,3 +3,4 @@
  * The service layer lives in src/services. New code should import from "@/services".
  */
 export { api } from "@/services";
+export { copilotService } from "@/services";
