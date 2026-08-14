@@ -8,11 +8,13 @@ import type {
   Analytics,
   AppNotification,
   Collection,
+  CommandCenterMetric,
   ComponentIntel,
   CopilotMessage,
   Datasheet,
   Evidence,
   EvidenceType,
+  PipelineStage,
   ProcessingJob,
   SearchHistoryEntry,
   SymbolSpec,
@@ -586,6 +588,40 @@ export const mockActivity: ActivityEvent[] = [
     detail: "TPS5430.pdf · no text layer detected",
     at: "1 h ago",
   },
+];
+
+export const mockCommandCenterMetrics: CommandCenterMetric[] = [
+  {
+    label: "Datasheets indexed",
+    value: "1,284",
+    delta: { text: "+42 this week", positive: true },
+    hint: "Across all workspaces",
+  },
+  {
+    label: "Evidence regions",
+    value: "48,921",
+    delta: { text: "+1,108 this week", positive: true },
+    hint: "Figures · tables · diagrams",
+  },
+  {
+    label: "Searches",
+    value: "16,438",
+    delta: { text: "+9.4% vs last week", positive: true },
+    hint: "Across all workspaces",
+  },
+  {
+    label: "Verified results",
+    value: "31,209",
+    delta: { text: "94.1% verification rate", positive: true },
+    hint: "Verified against source captions",
+  },
+];
+
+export const mockPipelineStages: PipelineStage[] = [
+  { label: "Datasheets", caption: "indexed PDF documents", count: "1,284" },
+  { label: "Visual Regions", caption: "figures · tables · diagrams", count: "48,921" },
+  { label: "Evidence", caption: "vector-indexed regions", count: "48,921" },
+  { label: "Verification", caption: "verified against captions", count: "31,209", verified: true },
 ];
 
 export const mockNotifications: AppNotification[] = [

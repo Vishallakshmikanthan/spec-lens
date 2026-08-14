@@ -242,6 +242,20 @@ export interface ActivityEvent {
   at: string;
 }
 
+export interface CommandCenterMetric {
+  label: string;
+  value: string;
+  delta?: { text: string; positive: boolean };
+  hint?: string;
+}
+
+export interface PipelineStage {
+  label: string;
+  caption: string;
+  count: string;
+  verified?: boolean;
+}
+
 export interface AppNotification {
   id: string;
   title: string;
