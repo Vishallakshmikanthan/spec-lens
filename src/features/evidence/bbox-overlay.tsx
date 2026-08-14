@@ -3,7 +3,8 @@
  *
  * Renders a normalized bounding box (0..1) onto an arbitrary viewBox, so it
  * works identically over the synthetic SVG page and (later) a real PDF render.
- * This is the canonical home of the feature; doc-page.tsx consumes it.
+ * Styling intent: forensic, not flashy — a dimmed page, a precise frame and
+ * machined corner ticks.
  */
 import { cn } from "@/lib/utils";
 import type { BoundingBox } from "@/types/speclens";
@@ -22,44 +23,46 @@ export function BboxOverlay({ bbox, viewBox, highlight = false, className }: Bbo
   const y = bbox.y * H;
   const w = bbox.w * W;
   const h = bbox.h * H;
+  const t = Math.max(6, Math.min(w, h) * 0.18);
 
-  const corners: [number, number][] = [
-    [x, y],
-    [x + w, y],
-    [x, y + h],
-    [x + w, y + h],
+  const ticks: string[] = [
+    `M${x} ${y + t} L${x} ${y} L${x + t} ${y}`,
+    `M${x + w - t} ${y} L${x + w} ${y} L${x + w} ${y + t}`,
+    `M${x + w} ${y + h - t} L${x + w} ${y + h} L${x + w - t} ${y + h}`,
+    `M${x + t} ${y + h} L${x} ${y + h} L${x} ${y + h - t}`,
   ];
 
   return (
     <g className={className}>
+      {/* dim everything outside the region */}
+      <path
+        d={`M0 0 H${W} V${H} H0 Z M${x} ${y} H${x + w} V${y + h} H${x} Z`}
+        fillRule="evenodd"
+        className="fill-background/45"
+      />
       <rect
         x={x}
         y={y}
         width={w}
         height={h}
-        className={cn(
-          "fill-primary/15 stroke-primary strokeWidth-2",
-          highlight && "animate-pulse-ring",
-        )}
-        rx={3}
+        rx={1}
+        className={cn("fill-primary/8 stroke-primary/70", highlight && "fill-primary/14")}
+        strokeWidth={1}
       />
-      {corners.map(([cx, cy], i) => (
-        <rect
-          key={i}
-          x={cx - 4}
-          y={cy - 4}
-          width="8"
-          height="8"
-          className="fill-primary opacity-80"
-        />
+      {ticks.map((d, i) => (
+        <path key={i} d={d} className="stroke-primary" strokeWidth={1.75} fill="none" />
       ))}
       {highlight && (
-        <circle
-          cx={x + w / 2}
-          cy={y + h / 2}
-          r={Math.max(w, h) / 2 + 8}
-          className="fill-none stroke-primary strokeWidth-1 animate-pulse-ring-opacity"
+        <rect
+          x={x - 3}
+          y={y - 3}
+          width={w + 6}
+          height={h + 6}
+          rx={2}
           fill="none"
+          className="stroke-primary/40"
+          strokeWidth={1}
+          strokeDasharray="4 4"
         />
       )}
     </g>
