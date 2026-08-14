@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DEMO_MODE } from "@/lib/speclens/config";
+import { api } from "@/services";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -56,18 +57,44 @@ export function AuthLayout({
 function LoginPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const login = async (email: string, password: string) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await api.auth.login({ email, password });
+
+      if (result.authenticated) {
+        navigate({ to: "/app" });
+      } else {
+        setError(result.statusMessage ?? "Login failed");
+      }
+    } catch (err: any) {
+      setError(err.statusMessage ?? "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <AuthLayout
       heading="Engineering intelligence, focused."
       sub="Sign in to your SpecLens workspace."
     >
+      {error && (
+        <div className="alert alert-error mb-4">
+          <span className="alert-content">{error}</span>
+        </div>
+      )}
       <form
         className="space-y-4"
         onSubmit={(e) => {
           e.preventDefault();
-          setLoading(true);
-          setTimeout(() => void navigate({ to: "/app" }), 400);
+          const email = (e.target as any).email.value;
+          const password = (e.target as any).password.value;
+          login(email, password);
         }}
       >
         <div className="space-y-1.5">

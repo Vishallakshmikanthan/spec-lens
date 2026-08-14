@@ -19,7 +19,8 @@ export const users = pgTable("users", {
   name: varchar("name", { length: 256 }),
   email: varchar("email", { length: 256 }).unique(),
   passwordHash: varchar("password_hash", { length: 256 }),
-  role: varchar("role", { length: 50 }).default("user"),
+  role: varchar("role", { length: 50 }).default("member"),
+  lastLoginAt: timestamp("last_login_at", { mode: "string" }),
   createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
   updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow(),
 })
@@ -51,6 +52,20 @@ export const workspaceMembers = pgTable("workspace_members", {
   joinedAt: timestamp("joined_at", { mode: "string" }).defaultNow(),
 }, (t) => ({
   uniqueWorkspaceUser: primaryKey({ columns: [t.workspaceId, t.userId] }),
+}))
+
+// ============================================================
+// Server-side Sessions (HTTP-only cookie based)
+// ============================================================
+export const sessions = pgTable("sessions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  tokenHash: varchar("token_hash", { length: 256 }).notNull,
+  expiresAt: timestamp("expires_at", { mode: "string" }).notNull,
+  createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
+  lastUsedAt: timestamp("last_used_at", { mode: "string" }).defaultNow(),
+}, (t) => ({
+  uniqueUserToken: primaryKey({ columns: [t.userId, t.tokenHash] }),
 }))
 
 // ============================================================

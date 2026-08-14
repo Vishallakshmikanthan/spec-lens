@@ -225,4 +225,44 @@ export const mockApi: SpecLensApi = {
     await delay(60);
     return mockHistory;
   },
+
+  async auth: {
+    login: async (email: string, password: string) => {
+      await delay(200);
+      // In demo mode, any email/password "works" and navigates to /app
+      return { authenticated: true };
+    },
+
+    signup: async ({
+      name,
+      email,
+      password,
+      passwordConfirmation,
+      workspaceName,
+    }: {
+      name: string;
+      email: string;
+      password: string;
+      passwordConfirmation: string;
+      workspaceName?: string;
+    }) => {
+      await delay(200);
+      return { authenticated: true };
+    },
+
+    logout: async () => {
+      await delay(60);
+      return { authenticated: false };
+    },
+
+    session: async () => {
+      await delay(60);
+      return {
+        authenticated: true,
+        user: mockUser,
+        workspace: mockWorkspaces[0],
+        memberships: [],
+      };
+    },
+  },
 };

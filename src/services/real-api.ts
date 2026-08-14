@@ -166,4 +166,56 @@ export const realApi: SpecLensApi = {
     request<SearchHistoryEntry[]>("/history").then((data) =>
       parseResponse(data, SearchHistoryEntrySchema, "listHistory"),
     ),
+
+  // Auth endpoints — use direct fetch with credentials: "include" for HTTP-only cookies
+  auth: {
+    login: async (email: string, password: string) => {
+      const res = await fetch(`${API_BASE}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new ApiError(err.statusMessage ?? "Login failed", res.status);
+      }
+      return res.json().then((data: any) => data);
+    },
+
+    signup: async (name: string, email: string, password: string, passwordConfirmation: string, workspaceName?: string) => {
+      const res = await fetch(`${API_BASE}/auth/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password, passwordConfirmation, workspaceName }),
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new ApiError(err.statusMessage ?? "Signup failed", res.status);
+      }
+      return res.json().then((data: any) => data);
+    },
+
+    logout: async () => {
+      const res = await fetch(`${API_BASE}/auth/logout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+      if (!res.ok) throw new ApiError("Logout failed", res.status);
+      return res.json().then(() => ({ authenticated: false }));
+    },
+
+    session: async () => {
+      const res = await fetch(`${API_BASE}/auth/session`, {
+        method: "GET",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        return { authenticated: false };
+      }
+      return res.json();
+    },
+  },
 };

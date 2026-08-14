@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Activity,
@@ -40,6 +40,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { DEMO_MODE } from "@/lib/speclens/config";
+import { api } from "@/services";
 import { mockNotifications, mockUser, mockWorkspaces } from "@/lib/speclens/mock-data";
 
 interface NavItem {
@@ -116,7 +117,9 @@ function SidebarBody({
   collapsed: boolean;
   onNavigate?: (() => void) | undefined;
 }) {
-  const [workspace, setWorkspace] = useState(mockWorkspaces[0]!);
+  const { user, workspace: currentWorkspace, memberships } = useAuthState();
+  const displayWorkspace = currentWorkspace ?? mockWorkspaces[0];
+  const displayUser = user ?? mockUser;
 
   return (
     <div className="flex h-full flex-col">
@@ -160,13 +163,13 @@ function SidebarBody({
               aria-label="Workspace and account menu"
             >
               <span className="grid size-7 shrink-0 place-items-center rounded-md border border-border bg-secondary font-mono text-[11px] font-medium">
-                {mockUser.initials}
+                {displayUser.initials}
               </span>
               {!collapsed && (
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[12.5px] font-medium">{mockUser.name}</span>
+                  <span className="block truncate text-[12.5px] font-medium">{displayUser.name}</span>
                   <span className="block truncate text-[11px] text-muted-foreground">
-                    {workspace.name}
+                    {displayWorkspace?.name ?? "Workspace"}
                   </span>
                 </span>
               )}
@@ -176,19 +179,37 @@ function SidebarBody({
             <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-muted-foreground">
               Switch workspace
             </DropdownMenuLabel>
+            {memberships.map((m) => (
+              <DropdownMenuItem key={m.workspaceId} onSelect={() => {
+                // navigate to workspace
+              }}>
+                <span className="flex-1 truncate">{m.workspaceId ? `Workspace ${m.workspaceId}` : "Workspace"}</span>
+                {m.workspaceId === (currentWorkspace?.id as string) && <Check className="size-3.5 text-primary" />}
+              </DropdownMenuItem>
+            ))}
             {mockWorkspaces.map((w) => (
-              <DropdownMenuItem key={w.id} onSelect={() => setWorkspace(w)}>
+              <DropdownMenuItem key={w.id} onSelect={() => {}}>
                 <span className="flex-1 truncate">{w.name}</span>
-                {w.id === workspace.id && <Check className="size-3.5 text-primary" />}
+                {w.id === (currentWorkspace?.id as string) && <Check className="size-3.5 text-primary" />}
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link to="/app/settings">Workspace settings</Link>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/login">Sign out</Link>
-            </DropdownMenuItem>
+            {DEMO_MODE ? (
+              <DropdownMenuItem asChild>
+                <Link to="/login">Sign out</Link>
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem asChild onSelect={async () => {
+                await api.auth.logout();
+                // Reload to clear auth state
+                window.location.reload();
+              }}>
+                <Link to="/login">Sign out</Link>
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -243,7 +264,40 @@ function NotificationBell() {
   );
 }
 
+function useAuthState() {
+  const [user, setUser] = useState<any>(null);
+  const [memberships, setMemberships] = useState<any[]>([]);
+  const [workspace, setWorkspace] = useState<any>(null);
+
+  useEffect(() => {
+    async function init() {
+      if (DEMO_MODE) {
+        setUser(mockUser);
+        setWorkspace(mockWorkspaces[0] ?? null);
+        setMemberships([]);
+        return;
+      }
+      try {
+        const { user, memberships: membershipsResult } = await api.auth.session();
+        setUser(user ?? null);
+        setMemberships(membershipsResult ?? []);
+        if (user && membershipsResult && membershipsResult.length > 0) {
+          setWorkspace(membershipsResult[0].workspaceId ? { id: membershipsResult[0].workspaceId, name: user.name ?? "Workspace" } : null);
+        }
+      } catch (e) {
+        setUser(null);
+        setMemberships([]);
+        setWorkspace(null);
+      }
+    }
+    init();
+  }, [DEMO_MODE]);
+
+  return { user, memberships, workspace };
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const { user, memberships, workspace } = useAuthState();
   const [collapsed, setCollapsed] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -301,10 +355,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <span className="truncate text-[12.5px] font-medium">{crumb}</span>
 
           <div className="ml-auto flex items-center gap-1.5">
-            {DEMO_MODE && (
+            {DEMO_MODE && !user && (
               <span className="hidden items-center gap-1.5 rounded-sm border border-border bg-secondary px-2 py-1 font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground sm:inline-flex">
                 <span className="size-1.5 rounded-full bg-warning" />
                 Demo workspace
+              </span>
+            )}
+            {!DEMO_MODE && user && (
+              <span className="hidden items-center gap-1.5 rounded-sm border border-border bg-secondary px-2 py-1 font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground sm:inline-flex">
+                <span className="size-1.5 rounded-full bg-primary" />
+                {user.name?.split(" ")[0] ?? "User"}
               </span>
             )}
             <button

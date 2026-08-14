@@ -71,4 +71,10 @@ export interface SpecLensApi {
   listActivity(): Promise<ActivityEvent[]>;
   listNotifications(): Promise<AppNotification[]>;
   listHistory(): Promise<SearchHistoryEntry[]>;
+  auth: {
+    login: (email: string, password: string) => Promise<{ authenticated: boolean; statusMessage?: string }>;
+    signup: (name: string, email: string, password: string, passwordConfirmation: string, workspaceName?: string) => Promise<{ authenticated: boolean; statusMessage?: string }>;
+    logout: () => Promise<{ authenticated: boolean }>;
+    session: () => Promise<{ authenticated: boolean; user?: any; workspace?: any; memberships?: any[] }>;
+  };
 }

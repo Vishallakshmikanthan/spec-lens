@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthLayout } from "./login";
 import { cn } from "@/lib/utils";
+import { api } from "@/services";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
@@ -43,8 +44,25 @@ function OnboardingPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [selected, setSelected] = useState<string[]>(["Analog & op-amps"]);
+  const [loggingIn, setLoggingIn] = useState(false);
 
   const next = () => (step < steps.length - 1 ? setStep(step + 1) : void navigate({ to: "/app" }));
+
+  const handleLogin = async (email: string, password: string) => {
+    setLoggingIn(true);
+    try {
+      const result = await api.auth.login({ email, password });
+      if (result.authenticated) {
+        navigate({ to: "/app" });
+      } else {
+        alert(result.statusMessage || "Login failed");
+      }
+    } catch (err: any) {
+      alert(err.statusMessage || "Login failed");
+    } finally {
+      setLoggingIn(false);
+    }
+  };
 
   return (
     <AuthLayout
@@ -120,13 +138,40 @@ function OnboardingPage() {
       )}
 
       <div className="mt-6 flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={() => void navigate({ to: "/app" })}>
+        <Button variant="ghost" size="sm" onClick={() => void navigate({ to: "/login" })}>
           Skip
         </Button>
-        <Button size="sm" onClick={next}>
-          {step === steps.length - 1 ? "Enter workspace" : "Continue"}
+        <Button size="sm" onClick={next} disabled={loggingIn}>
+          {step === steps.length - 1 ? (loggingIn ? "Signing in…" : "Enter workspace") : "Continue"}
         </Button>
       </div>
+
+      {step === steps.length - 1 && !loggingIn && (
+        <div className="mt-4 space-y-2">
+          <p className="text-[12px] text-muted-foreground">
+            Not a member?{" "}
+            <Button
+              variant="link"
+              size="sm"
+              onClick={() => navigate({ to: "/login" })}
+            >
+              Log in
+            </Button>
+            {" to continue."}
+          </p>
+          <p className="text-[12px] text-muted-foreground">
+            New here?{" "}
+            <Button
+              variant="link"
+              size="sm"
+              onClick={() => navigate({ to: "/register" })}
+            >
+              Create account
+            </Button>
+            {" first."}
+          </p>
+        </div>
+      )}
     </AuthLayout>
   );
 }

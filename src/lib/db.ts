@@ -23,10 +23,7 @@ function initDb() {
   db = drizzle(sql, { schema })
 }
 
-export const getDb = (): ReturnType<typeof drizzle> => {
-  if (!db) initDb()
-  return db
-}
+export { db, getDb }
 
 export const database = schema
 
