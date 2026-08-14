@@ -231,7 +231,7 @@ function Library() {
                         Search
                       </Link>
                     </Button>
-                    <Button asChild size="sm" variant="ghost" className="flex-1">
+                    <Button size="sm" variant="ghost" className="flex-1">
                       More
                     </Button>
                   </div>
