@@ -1,0 +1,116 @@
+database/schema.ts(2,3): error TS2724: '"drizzle-orm"' has no exported member named 'pgTable'. Did you mean 'Table'?
+database/schema.ts(3,3): error TS2305: Module '"drizzle-orm"' has no exported member 'serial'.
+database/schema.ts(4,3): error TS2305: Module '"drizzle-orm"' has no exported member 'varchar'.
+database/schema.ts(5,3): error TS2305: Module '"drizzle-orm"' has no exported member 'text'.
+database/schema.ts(6,3): error TS2305: Module '"drizzle-orm"' has no exported member 'integer'.
+database/schema.ts(7,3): error TS2305: Module '"drizzle-orm"' has no exported member 'boolean'.
+database/schema.ts(8,3): error TS2305: Module '"drizzle-orm"' has no exported member 'timestamp'.
+database/schema.ts(9,3): error TS2305: Module '"drizzle-orm"' has no exported member 'doublePrecision'.
+database/schema.ts(10,3): error TS2305: Module '"drizzle-orm"' has no exported member 'index'.
+database/schema.ts(11,3): error TS2724: '"drizzle-orm"' has no exported member named 'primaryKey'. Did you mean 'IsPrimaryKey'?
+database/schema.ts(52,5): error TS7006: Parameter 't' implicitly has an 'any' type.
+database/schema.ts(76,5): error TS7006: Parameter 't' implicitly has an 'any' type.
+database/schema.ts(92,5): error TS7006: Parameter 't' implicitly has an 'any' type.
+database/schema.ts(123,5): error TS7006: Parameter 't' implicitly has an 'any' type.
+database/schema.ts(144,5): error TS7006: Parameter 't' implicitly has an 'any' type.
+database/schema.ts(157,5): error TS7006: Parameter 't' implicitly has an 'any' type.
+database/schema.ts(174,5): error TS7006: Parameter 't' implicitly has an 'any' type.
+database/schema.ts(184,5): error TS7006: Parameter 't' implicitly has an 'any' type.
+database/schema.ts(208,5): error TS7006: Parameter 't' implicitly has an 'any' type.
+database/schema.ts(221,5): error TS7006: Parameter 't' implicitly has an 'any' type.
+database/schema.ts(237,5): error TS7006: Parameter 't' implicitly has an 'any' type.
+database/schema.ts(253,5): error TS7006: Parameter 't' implicitly has an 'any' type.
+database/schema.ts(269,5): error TS7006: Parameter 't' implicitly has an 'any' type.
+database/schema.ts(283,5): error TS7006: Parameter 't' implicitly has an 'any' type.
+database/schema.ts(298,5): error TS7006: Parameter 't' implicitly has an 'any' type.
+database/schema.ts(316,5): error TS7006: Parameter 't' implicitly has an 'any' type.
+database/schema.ts(333,5): error TS7006: Parameter 't' implicitly has an 'any' type.
+database/schema.ts(351,5): error TS7006: Parameter 't' implicitly has an 'any' type.
+database/schema.ts(365,5): error TS7006: Parameter 't' implicitly has an 'any' type.
+src/lib/db.ts(14,35): error TS4111: Property 'DATABASE_URL' comes from an index signature, so it must be accessed with ['DATABASE_URL'].
+src/lib/db.ts(28,3): error TS2322: Type '(NeonHttpDatabase<Record<string, unknown>> & { $client: NeonQueryFunction<any, any>; }) | null' is not assignable to type 'NeonHttpDatabase<Record<string, unknown>> & { $client: NeonQueryFunction<any, any>; }'.
+  Type 'null' is not assignable to type 'NeonHttpDatabase<Record<string, unknown>> & { $client: NeonQueryFunction<any, any>; }'.
+    Type 'null' is not assignable to type 'NeonHttpDatabase<Record<string, unknown>>'.
+src/lib/speclens/transport.ts(152,45): error TS2379: Argument of type '{ signal: AbortSignal | null | undefined; timeout: number | undefined; base: string; }' is not assignable to parameter of type 'RequestInit & { timeout?: number; base: string; signal?: AbortSignal | null; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Type '{ signal: AbortSignal | null | undefined; timeout: number | undefined; base: string; }' is not assignable to type 'RequestInit' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+    Types of property 'signal' are incompatible.
+      Type 'AbortSignal | null | undefined' is not assignable to type 'AbortSignal | null'.
+        Type 'undefined' is not assignable to type 'AbortSignal | null'.
+src/lib/speclens/transport.ts(206,47): error TS18004: No value exists in scope for the shorthand property 'signal'. Either declare one or provide an initializer.
+src/lib/speclens/transport.ts(206,55): error TS18004: No value exists in scope for the shorthand property 'timeout'. Either declare one or provide an initializer.
+src/lib/speclens/transport.ts(233,31): error TS2379: Argument of type '{ method: "GET"; signal: AbortSignal | undefined; base: string; }' is not assignable to parameter of type '{ base: string; method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"; body?: unknown; headers?: Record<string, string>; signal?: AbortSignal | null; timeout?: number; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'signal' are incompatible.
+    Type 'AbortSignal | undefined' is not assignable to type 'AbortSignal | null'.
+      Type 'undefined' is not assignable to type 'AbortSignal | null'.
+src/lib/speclens/transport.ts(242,31): error TS2379: Argument of type '{ method: "POST"; body: unknown; signal: AbortSignal | undefined; base: string; }' is not assignable to parameter of type '{ base: string; method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"; body?: unknown; headers?: Record<string, string>; signal?: AbortSignal | null; timeout?: number; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'signal' are incompatible.
+    Type 'AbortSignal | undefined' is not assignable to type 'AbortSignal | null'.
+      Type 'undefined' is not assignable to type 'AbortSignal | null'.
+src/lib/speclens/transport.ts(252,31): error TS2379: Argument of type '{ method: "PUT"; body: unknown; signal: AbortSignal | undefined; base: string; }' is not assignable to parameter of type '{ base: string; method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"; body?: unknown; headers?: Record<string, string>; signal?: AbortSignal | null; timeout?: number; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'signal' are incompatible.
+    Type 'AbortSignal | undefined' is not assignable to type 'AbortSignal | null'.
+      Type 'undefined' is not assignable to type 'AbortSignal | null'.
+src/lib/speclens/transport.ts(262,31): error TS2379: Argument of type '{ method: "PATCH"; body: unknown; signal: AbortSignal | undefined; base: string; }' is not assignable to parameter of type '{ base: string; method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"; body?: unknown; headers?: Record<string, string>; signal?: AbortSignal | null; timeout?: number; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'signal' are incompatible.
+    Type 'AbortSignal | undefined' is not assignable to type 'AbortSignal | null'.
+      Type 'undefined' is not assignable to type 'AbortSignal | null'.
+src/lib/speclens/transport.ts(272,31): error TS2379: Argument of type '{ method: "DELETE"; signal: AbortSignal | undefined; base: string; }' is not assignable to parameter of type '{ base: string; method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"; body?: unknown; headers?: Record<string, string>; signal?: AbortSignal | null; timeout?: number; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'signal' are incompatible.
+    Type 'AbortSignal | undefined' is not assignable to type 'AbortSignal | null'.
+      Type 'undefined' is not assignable to type 'AbortSignal | null'.
+src/lib/speclens/transport.ts(284,31): error TS2379: Argument of type '{ method: "POST"; body: FormData | undefined; signal: AbortSignal | undefined; base: string; }' is not assignable to parameter of type '{ base: string; method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"; body?: unknown; headers?: Record<string, string>; signal?: AbortSignal | null; timeout?: number; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'signal' are incompatible.
+    Type 'AbortSignal | undefined' is not assignable to type 'AbortSignal | null'.
+      Type 'undefined' is not assignable to type 'AbortSignal | null'.
+src/lib/speclens/transport.ts(324,34): error TS2412: Type 'AbortSignal | null | undefined' is not assignable to type 'AbortSignal | undefined' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+src/lib/speclens/transport.ts(327,55): error TS2412: Type 'AbortSignal | null | undefined' is not assignable to type 'AbortSignal | undefined' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+src/lib/speclens/transport.ts(330,54): error TS2412: Type 'AbortSignal | null | undefined' is not assignable to type 'AbortSignal | undefined' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+src/lib/speclens/transport.ts(333,56): error TS2412: Type 'AbortSignal | null | undefined' is not assignable to type 'AbortSignal | undefined' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+src/lib/speclens/transport.ts(336,37): error TS2412: Type 'AbortSignal | null | undefined' is not assignable to type 'AbortSignal | undefined' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+src/lib/speclens/transport.ts(340,32): error TS2412: Type 'AbortSignal | null | undefined' is not assignable to type 'AbortSignal | undefined' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+src/services/real-api.ts(66,7): error TS2554: Expected 2 arguments, but got 4.
+src/services/real-api.ts(74,5): error TS2322: Type 'Promise<Datasheet[] | { id: string; title: string; mpn: string; status: "indexed" | "indexing" | "queued" | "failed"; manufacturer: string; pages: number; collections: string[]; fileName: string; ... 4 more ...; accent: "cyan" | ... 2 more ... | "green"; }>' is not assignable to type 'Promise<Datasheet[]>'.
+  Type 'Datasheet[] | { id: string; title: string; mpn: string; status: "indexed" | "indexing" | "queued" | "failed"; manufacturer: string; pages: number; collections: string[]; fileName: string; ... 4 more ...; accent: "cyan" | ... 2 more ... | "green"; }' is not assignable to type 'Datasheet[]'.
+    Type '{ id: string; title: string; mpn: string; status: "indexed" | "indexing" | "queued" | "failed"; manufacturer: string; pages: number; collections: string[]; fileName: string; sizeMb: number; evidenceCount: number; updatedAt: string; favorite: boolean; accent: "cyan" | ... 2 more ... | "green"; }' is missing the following properties from type 'Datasheet[]': length, pop, push, concat, and 29 more.
+src/services/real-api.ts(84,5): error TS2322: Type 'Promise<ProcessingJob | { id: string; progress: number; mpn: string; status: "queued" | "failed" | "processing" | "complete"; duration: string; pages: number; fileName: string; sizeMb: number; stages: { ...; }[]; logs: { ...; }[]; startedAt: string; }>' is not assignable to type 'Promise<ProcessingJob>'.
+  Type 'ProcessingJob | { id: string; progress: number; mpn: string; status: "queued" | "failed" | "processing" | "complete"; duration: string; pages: number; fileName: string; sizeMb: number; stages: { ...; }[]; logs: { ...; }[]; startedAt: string; }' is not assignable to type 'ProcessingJob'.
+    Type '{ id: string; progress: number; mpn: string; status: "queued" | "failed" | "processing" | "complete"; duration: string; pages: number; fileName: string; sizeMb: number; stages: { label: string; state: "failed" | ... 2 more ... | "pending"; key: string; }[]; logs: { ...; }[]; startedAt: string; }' is not assignable to type 'ProcessingJob'.
+      Types of property 'logs' are incompatible.
+        Type '{ at: string; line: string; level?: "error" | "info" | "warn" | undefined; }[]' is not assignable to type '{ at: string; line: string; level?: "error" | "info" | "warn"; }[]'.
+          Type '{ at: string; line: string; level?: "error" | "info" | "warn" | undefined; }' is not assignable to type '{ at: string; line: string; level?: "error" | "info" | "warn"; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+            Types of property 'level' are incompatible.
+              Type '"error" | "info" | "warn" | undefined' is not assignable to type '"error" | "info" | "warn"'.
+                Type 'undefined' is not assignable to type '"error" | "info" | "warn"'.
+src/services/real-api.ts(94,5): error TS2322: Type 'Promise<ProcessingJob[] | { id: string; progress: number; mpn: string; status: "queued" | "failed" | "processing" | "complete"; duration: string; pages: number; fileName: string; sizeMb: number; stages: { ...; }[]; logs: { ...; }[]; startedAt: string; }>' is not assignable to type 'Promise<ProcessingJob[]>'.
+  Type 'ProcessingJob[] | { id: string; progress: number; mpn: string; status: "queued" | "failed" | "processing" | "complete"; duration: string; pages: number; fileName: string; sizeMb: number; stages: { ...; }[]; logs: { ...; }[]; startedAt: string; }' is not assignable to type 'ProcessingJob[]'.
+    Type '{ id: string; progress: number; mpn: string; status: "queued" | "failed" | "processing" | "complete"; duration: string; pages: number; fileName: string; sizeMb: number; stages: { label: string; state: "failed" | ... 2 more ... | "pending"; key: string; }[]; logs: { ...; }[]; startedAt: string; }' is missing the following properties from type 'ProcessingJob[]': length, pop, push, concat, and 29 more.
+src/services/real-api.ts(99,5): error TS2322: Type 'Promise<ProcessingJob | { id: string; progress: number; mpn: string; status: "queued" | "failed" | "processing" | "complete"; duration: string; pages: number; fileName: string; sizeMb: number; stages: { ...; }[]; logs: { ...; }[]; startedAt: string; } | undefined>' is not assignable to type 'Promise<ProcessingJob | undefined>'.
+  Type 'ProcessingJob | { id: string; progress: number; mpn: string; status: "queued" | "failed" | "processing" | "complete"; duration: string; pages: number; fileName: string; sizeMb: number; stages: { ...; }[]; logs: { ...; }[]; startedAt: string; } | undefined' is not assignable to type 'ProcessingJob | undefined'.
+    Type '{ id: string; progress: number; mpn: string; status: "queued" | "failed" | "processing" | "complete"; duration: string; pages: number; fileName: string; sizeMb: number; stages: { label: string; state: "failed" | ... 2 more ... | "pending"; key: string; }[]; logs: { ...; }[]; startedAt: string; }' is not assignable to type 'ProcessingJob'.
+      Types of property 'logs' are incompatible.
+        Type '{ at: string; line: string; level?: "error" | "info" | "warn" | undefined; }[]' is not assignable to type '{ at: string; line: string; level?: "error" | "info" | "warn"; }[]'.
+          Type '{ at: string; line: string; level?: "error" | "info" | "warn" | undefined; }' is not assignable to type '{ at: string; line: string; level?: "error" | "info" | "warn"; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+            Types of property 'level' are incompatible.
+              Type '"error" | "info" | "warn" | undefined' is not assignable to type '"error" | "info" | "warn"'.
+                Type 'undefined' is not assignable to type '"error" | "info" | "warn"'.
+src/services/real-api.ts(114,5): error TS2322: Type 'Promise<Evidence[] | { id: string; title: string; type: "pinout" | "package" | "block-diagram" | "timing" | "application-circuit" | "electrical-curve" | "mechanical" | "absolute-maximum" | "functional-diagram" | "other"; ... 13 more ...; retrievalScore: number; }>' is not assignable to type 'Promise<Evidence[]>'.
+  Type 'Evidence[] | { id: string; title: string; type: "pinout" | "package" | "block-diagram" | "timing" | "application-circuit" | "electrical-curve" | "mechanical" | "absolute-maximum" | "functional-diagram" | "other"; ... 13 more ...; retrievalScore: number; }' is not assignable to type 'Evidence[]'.
+    Type '{ id: string; title: string; type: "pinout" | "package" | "block-diagram" | "timing" | "application-circuit" | "electrical-curve" | "mechanical" | "absolute-maximum" | "functional-diagram" | "other"; ... 13 more ...; retrievalScore: number; }' is missing the following properties from type 'Evidence[]': length, pop, push, concat, and 29 more.
+src/services/real-api.ts(124,5): error TS2322: Type 'Promise<CopilotMessage | { id: string; content: string; role: "user" | "assistant"; pending?: boolean | undefined; confidence?: number | undefined; sources?: { label: string; page: number; confidence: number; evidenceId: string; }[] | undefined; }>' is not assignable to type 'Promise<CopilotMessage>'.
+  Type 'CopilotMessage | { id: string; content: string; role: "user" | "assistant"; pending?: boolean | undefined; confidence?: number | undefined; sources?: { label: string; page: number; confidence: number; evidenceId: string; }[] | undefined; }' is not assignable to type 'CopilotMessage' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+    Type '{ id: string; content: string; role: "user" | "assistant"; pending?: boolean | undefined; confidence?: number | undefined; sources?: { label: string; page: number; confidence: number; evidenceId: string; }[] | undefined; }' is not assignable to type 'CopilotMessage' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+      Types of property 'sources' are incompatible.
+        Type '{ label: string; page: number; confidence: number; evidenceId: string; }[] | undefined' is not assignable to type 'CopilotSource[]'.
+          Type 'undefined' is not assignable to type 'CopilotSource[]'.
+src/services/real-api.ts(134,5): error TS2322: Type 'Promise<Analytics | { confidence: { count: number; bucket: string; }[]; metrics: { label: string; value: string; delta: { text: string; positive: boolean; }; hint?: string | undefined; }[]; retrieval: { ...; }[]; evidenceDistribution: { ...; }[]; queryTypes: { ...; }[]; throughput: { ...; }[]; }>' is not assignable to type 'Promise<Analytics>'.
+  Type 'Analytics | { confidence: { count: number; bucket: string; }[]; metrics: { label: string; value: string; delta: { text: string; positive: boolean; }; hint?: string | undefined; }[]; retrieval: { ...; }[]; evidenceDistribution: { ...; }[]; queryTypes: { ...; }[]; throughput: { ...; }[]; }' is not assignable to type 'Analytics'.
+    Type '{ confidence: { count: number; bucket: string; }[]; metrics: { label: string; value: string; delta: { text: string; positive: boolean; }; hint?: string | undefined; }[]; retrieval: { day: string; precision: number; recall: number; }[]; evidenceDistribution: { ...; }[]; queryTypes: { ...; }[]; throughput: { ...; }[]; }' is not assignable to type 'Analytics'.
+      Types of property 'metrics' are incompatible.
+        Type '{ label: string; value: string; delta: { text: string; positive: boolean; }; hint?: string | undefined; }[]' is not assignable to type '{ label: string; value: string; delta: string; positive: boolean; }[]'.
+          Property 'positive' is missing in type '{ label: string; value: string; delta: { text: string; positive: boolean; }; hint?: string | undefined; }' but required in type '{ label: string; value: string; delta: string; positive: boolean; }'.
+src/services/real-api.ts(139,5): error TS2322: Type 'Promise<Collection[] | { id: string; name: string; description: string; evidence: number; updatedAt: string; datasheets: number; components: number; }>' is not assignable to type 'Promise<Collection[]>'.
+  Type 'Collection[] | { id: string; name: string; description: string; evidence: number; updatedAt: string; datasheets: number; components: number; }' is not assignable to type 'Collection[]'.
+    Type '{ id: string; name: string; description: string; evidence: number; updatedAt: string; datasheets: number; components: number; }' is missing the following properties from type 'Collection[]': length, pop, push, concat, and 29 more.
+src/services/real-api.ts(166,5): error TS2322: Type 'Promise<SearchHistoryEntry[] | { id: string; at: string; results: number; query: string; mpn: string; bestConfidence: number; }>' is not assignable to type 'Promise<SearchHistoryEntry[]>'.
+  Type 'SearchHistoryEntry[] | { id: string; at: string; results: number; query: string; mpn: string; bestConfidence: number; }' is not assignable to type 'SearchHistoryEntry[]'.
+    Type '{ id: string; at: string; results: number; query: string; mpn: string; bestConfidence: number; }' is missing the following properties from type 'SearchHistoryEntry[]': length, pop, push, concat, and 28 more.
