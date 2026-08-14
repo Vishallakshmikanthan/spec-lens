@@ -1,7 +1,6 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { SymbolStudio } from "@/routes/app.symbol-studio-component";
 
 export const Route = createFileRoute("/app/symbol-studio")({
-  beforeLoad: () => {
-    throw redirect({ to: "/app/symbols" });
-  },
+  component: SymbolStudio,
 });
