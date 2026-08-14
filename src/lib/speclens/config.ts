@@ -5,7 +5,7 @@
  */
 export const DEMO_MODE = true;
 
-export const API_BASE = "/api";
+export const API_BASE = (import.meta.env["VITE_API_BASE"] as string | undefined) ?? "/api";
 
 export const APP_NAME = "SpecLens";
 export const APP_TAGLINE = "Visual Intelligence for Technical Specifications";
