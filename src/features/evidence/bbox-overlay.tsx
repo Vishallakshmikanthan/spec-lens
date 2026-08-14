@@ -37,13 +37,31 @@ export function BboxOverlay({ bbox, viewBox, highlight = false, className }: Bbo
         y={y}
         width={w}
         height={h}
-        className={cn("fill-primary/10 stroke-primary", highlight && "animate-pulse-ring")}
-        strokeWidth={1.5}
-        rx={2}
+        className={cn(
+          "fill-primary/15 stroke-primary strokeWidth-2",
+          highlight && "animate-pulse-ring",
+        )}
+        rx={3}
       />
       {corners.map(([cx, cy], i) => (
-        <rect key={i} x={cx - 2.5} y={cy - 2.5} width="5" height="5" className="fill-primary" />
+        <rect
+          key={i}
+          x={cx - 4}
+          y={cy - 4}
+          width="8"
+          height="8"
+          className="fill-primary opacity-80"
+        />
       ))}
+      {highlight && (
+        <circle
+          cx={x + w / 2}
+          cy={y + h / 2}
+          r={Math.max(w, h) / 2 + 8}
+          className="fill-none stroke-primary strokeWidth-1 animate-pulse-ring-opacity"
+          fill="none"
+        />
+      )}
     </g>
   );
 }
