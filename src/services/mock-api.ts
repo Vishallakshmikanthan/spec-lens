@@ -65,6 +65,7 @@ export const mockApi: SpecLensApi = {
       pages: 0,
       sizeMb: Math.round((file.size / 1024 / 1024) * 10) / 10,
       startedAt: new Date().toISOString(),
+      duration: "processing",
       stages: [
         { key: "validate", label: "PDF validated", state: "pending" },
         { key: "load", label: "Document loaded", state: "pending" },

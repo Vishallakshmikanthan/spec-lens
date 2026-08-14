@@ -5,6 +5,8 @@ import { PageHeader, DemoNotice, ErrorState } from "@/components/speclens/primit
 import { mockJobs } from "@/lib/speclens/mock-data";
 import { cn } from "@/lib/utils";
 
+const displayedJobsFileNames = ["LM358.pdf", "TPS5430.pdf", "OPA197.pdf"];
+
 export const Route = createFileRoute("/app/monitor")({
   head: () => ({
     meta: [
@@ -28,8 +30,10 @@ export const Route = createFileRoute("/app/monitor")({
 });
 
 function MonitorPage() {
-  const [selected, setSelected] = useState(mockJobs[0]!.id);
-  const job = mockJobs.find((j) => j.id === selected)!;
+  const filteredJobs = mockJobs.filter((j) => displayedJobsFileNames.includes(j.fileName));
+
+  const [selected, setSelected] = useState(filteredJobs[0]!.id);
+  const job = filteredJobs.find((j) => j.id === selected)!;
 
   return (
     <div>
@@ -39,7 +43,7 @@ function MonitorPage() {
       />
       <div className="grid gap-0 lg:grid-cols-[320px_1fr]">
         <ul className="divide-y divide-border border-b border-border lg:border-b-0 lg:border-r">
-          {mockJobs.map((j) => (
+          {filteredJobs.map((j) => (
             <li key={j.id}>
               <button
                 onClick={() => setSelected(j.id)}
@@ -82,7 +86,8 @@ function MonitorPage() {
           <div>
             <h2 className="font-mono text-[15px]">{job.fileName}</h2>
             <p className="text-[12.5px] text-muted-foreground">
-              {job.mpn} · {job.pages} pages · {job.sizeMb} MB · started {job.startedAt}
+              {job.mpn} · {job.pages} pages · {job.sizeMb} MB · started {job.startedAt} ·{" "}
+              {job.duration}
             </p>
           </div>
 
@@ -121,7 +126,7 @@ function MonitorPage() {
               Job log
             </p>
             <pre className="max-h-72 overflow-auto rounded-lg border border-border bg-background p-3 font-mono text-[11.5px] leading-relaxed">
-              {job.logs.map((l) => `${l.at}  ${l.line}`).join("\n")}
+              {job.logs.map((l) => `${l.at} ${l.line}`).join("\n")}
             </pre>
           </div>
           <DemoNotice />

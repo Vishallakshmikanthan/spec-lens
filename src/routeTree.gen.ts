@@ -23,6 +23,7 @@ import { Route as AppCopilotRouteImport } from './routes/app.copilot'
 import { Route as AppDatasheetsRouteImport } from './routes/app.datasheets'
 import { Route as AppDeveloperRouteImport } from './routes/app.developer'
 import { Route as AppEvidenceRouteImport } from './routes/app.evidence'
+import { Route as AppEvidenceGraphRouteImport } from './routes/app.evidence-graph'
 import { Route as AppHelpRouteImport } from './routes/app.help'
 import { Route as AppHistoryRouteImport } from './routes/app.history'
 import { Route as AppJobsRouteImport } from './routes/app.jobs'
@@ -106,6 +107,11 @@ const AppEvidenceRoute = AppEvidenceRouteImport.update({
   path: '/evidence',
   getParentRoute: () => AppRoute,
 } as any)
+const AppEvidenceGraphRoute = AppEvidenceGraphRouteImport.update({
+  id: '/evidence-graph',
+  path: '/evidence-graph',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppHelpRoute = AppHelpRouteImport.update({
   id: '/help',
   path: '/help',
@@ -182,6 +188,7 @@ export interface FileRoutesByFullPath {
   '/app/datasheets': typeof AppDatasheetsRouteWithChildren
   '/app/developer': typeof AppDeveloperRoute
   '/app/evidence': typeof AppEvidenceRouteWithChildren
+  '/app/evidence-graph': typeof AppEvidenceGraphRoute
   '/app/help': typeof AppHelpRoute
   '/app/history': typeof AppHistoryRoute
   '/app/jobs': typeof AppJobsRoute
@@ -209,6 +216,7 @@ export interface FileRoutesByTo {
   '/app/datasheets': typeof AppDatasheetsRouteWithChildren
   '/app/developer': typeof AppDeveloperRoute
   '/app/evidence': typeof AppEvidenceRouteWithChildren
+  '/app/evidence-graph': typeof AppEvidenceGraphRoute
   '/app/help': typeof AppHelpRoute
   '/app/history': typeof AppHistoryRoute
   '/app/jobs': typeof AppJobsRoute
@@ -238,6 +246,7 @@ export interface FileRoutesById {
   '/app/datasheets': typeof AppDatasheetsRouteWithChildren
   '/app/developer': typeof AppDeveloperRoute
   '/app/evidence': typeof AppEvidenceRouteWithChildren
+  '/app/evidence-graph': typeof AppEvidenceGraphRoute
   '/app/help': typeof AppHelpRoute
   '/app/history': typeof AppHistoryRoute
   '/app/jobs': typeof AppJobsRoute
@@ -268,6 +277,7 @@ export interface FileRouteTypes {
     | '/app/datasheets'
     | '/app/developer'
     | '/app/evidence'
+    | '/app/evidence-graph'
     | '/app/help'
     | '/app/history'
     | '/app/jobs'
@@ -295,6 +305,7 @@ export interface FileRouteTypes {
     | '/app/datasheets'
     | '/app/developer'
     | '/app/evidence'
+    | '/app/evidence-graph'
     | '/app/help'
     | '/app/history'
     | '/app/jobs'
@@ -323,6 +334,7 @@ export interface FileRouteTypes {
     | '/app/datasheets'
     | '/app/developer'
     | '/app/evidence'
+    | '/app/evidence-graph'
     | '/app/help'
     | '/app/history'
     | '/app/jobs'
@@ -445,6 +457,13 @@ declare module '@tanstack/react-router' {
       path: '/evidence'
       fullPath: '/app/evidence'
       preLoaderRoute: typeof AppEvidenceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/evidence-graph': {
+      id: '/app/evidence-graph'
+      path: '/evidence-graph'
+      fullPath: '/app/evidence-graph'
+      preLoaderRoute: typeof AppEvidenceGraphRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/help': {
@@ -578,6 +597,7 @@ interface AppRouteChildren {
   AppDatasheetsRoute: typeof AppDatasheetsRouteWithChildren
   AppDeveloperRoute: typeof AppDeveloperRoute
   AppEvidenceRoute: typeof AppEvidenceRouteWithChildren
+  AppEvidenceGraphRoute: typeof AppEvidenceGraphRoute
   AppHelpRoute: typeof AppHelpRoute
   AppHistoryRoute: typeof AppHistoryRoute
   AppJobsRoute: typeof AppJobsRoute
@@ -598,6 +618,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDatasheetsRoute: AppDatasheetsRouteWithChildren,
   AppDeveloperRoute: AppDeveloperRoute,
   AppEvidenceRoute: AppEvidenceRouteWithChildren,
+  AppEvidenceGraphRoute: AppEvidenceGraphRoute,
   AppHelpRoute: AppHelpRoute,
   AppHistoryRoute: AppHistoryRoute,
   AppJobsRoute: AppJobsRoute,

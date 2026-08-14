@@ -182,6 +182,7 @@ export interface ProcessingJob {
   stages: JobStage[];
   logs: { at: string; line: string; level?: "info" | "warn" | "error" }[];
   startedAt: string;
+  duration: string;
 }
 
 export interface Analytics {
