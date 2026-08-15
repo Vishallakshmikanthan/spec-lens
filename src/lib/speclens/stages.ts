@@ -1,27 +1,34 @@
 /**
  * Canonical processing-pipeline stage vocabulary.
  *
- * The audit flagged that the upload page and ProcessingJob.stages used two
- * divergent label sets. These are the canonical machine stage keys; user-facing
- * label mapping lives next to each consumer until the backend commits to one
- * vocabulary.
+ * Both the upload UI and ProcessingJob.stages must use these machine-readable
+ * stage keys. User-facing labels are defined in UPLOAD_STAGE_LABELS map below.
+ * Frontend consumers should map internal keys to user labels via this lookup.
+ *
+ * Canonical order: validate → store → extract → render → layout → regions →
+ * embed → index → verify → ready
  */
 export const PROCESSING_STAGES = [
-  { key: "ingest", label: "PDF ingestion" },
-  { key: "render", label: "Page rendering" },
-  { key: "layout", label: "Layout analysis" },
-  { key: "regions", label: "Region detection" },
+  { key: "validate", label: "PDF validated" },
+  { key: "store", label: "Document stored" },
+  { key: "extract", label: "Content extracted" },
+  { key: "render", label: "Pages rendered" },
+  { key: "layout", label: "Layout analyzed" },
+  { key: "regions", label: "Visual regions detected" },
   { key: "embed", label: "Embedding" },
   { key: "index", label: "Vector indexing" },
-  { key: "verify", label: "Verification" },
+  { key: "verify", label: "Evidence verification" },
+  { key: "ready", label: "Ready" },
 ] as const;
 
 export const UPLOAD_STAGE_LABELS = [
   { key: "validate", label: "PDF validated" },
-  { key: "load", label: "Document loaded" },
+  { key: "store", label: "Document stored" },
+  { key: "extract", label: "Content extracted" },
   { key: "render", label: "Pages rendered" },
   { key: "layout", label: "Layout analyzed" },
   { key: "regions", label: "Visual regions detected" },
+  { key: "embed", label: "Embedding" },
   { key: "index", label: "Building retrieval index" },
   { key: "verify", label: "Evidence verification" },
   { key: "ready", label: "Ready" },

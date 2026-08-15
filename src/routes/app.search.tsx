@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Search, Loader2, SlidersHorizontal, Clock } from "lucide-react";
 import { PageHeader, EmptyState, DemoNotice } from "@/components/speclens/primitives";
-import { DocPage } from "@/components/speclens/doc-page";
+import { PdfPageViewer } from "@/components/speclens/pdf-page-viewer";
 import { Button } from "@/components/ui/button";
 import {
   ConfidenceBar,
@@ -14,6 +14,7 @@ import { EVIDENCE_TYPE_LABEL, searchExamples } from "@/lib/speclens/mock-data";
 import { api, DEMO_MODE } from "@/lib/speclens/api";
 import type { EvidenceType, SearchResultSet, SearchFilters } from "@/lib/speclens/types";
 import { cn } from "@/lib/utils";
+import { useApiQuery } from "@/hooks/use-api-query";
 
 const SEARCH_MODES = ["Natural Language", "MPN", "Advanced"] as const;
 
@@ -41,6 +42,8 @@ export const Route = createFileRoute("/app/search")({
 });
 
 function VisualSearch() {
+  // Get datasheetId from route params if available (for document-local search)
+  const datasheetId = Route.useRouteParams().datasheetId;
   const { q } = Route.useSearch();
   const navigate = useNavigate();
   const [input, setInput] = useState(q);
@@ -54,10 +57,17 @@ function VisualSearch() {
   const [retrievalStage, setRetrievalStage] = useState<
     "query" | "candidates" | "ranking" | "verify" | null
   >(null);
+  const [isDocSearch, setIsDocSearch] = useState(false);
 
   useEffect(() => {
     setInput(q);
   }, [q]);
+
+  useEffect(() => {
+    // Detect if we have a datasheet context for document-local search
+    const hasDocContext = !!datasheetId;
+    setIsDocSearch(hasDocContext);
+  }, [datasheetId]);
 
   useEffect(() => {
     if (!q) {
@@ -65,18 +75,43 @@ function VisualSearch() {
       return;
     }
     let alive = true;
-    setRetrievalStage("query");
-    api.search(q, { types, minConfidence: minConf }).then((r) => {
-      if (alive) {
-        setData(r);
-        setRetrievalStage("verify");
-        setLoading(false);
-      }
-    });
+
+    if (isDocSearch && datasheetId) {
+      // Document-local search
+      api
+        .search(q, { types, minConfidence: minConf, documentId: datasheetId })
+        .then((r) => {
+          if (alive) {
+            setData(r);
+            setRetrievalStage("verify");
+            setLoading(false);
+          }
+        })
+        .catch(() => {
+          // Fall back to global search if document search fails
+          api.search(q, { types, minConfidence: minConf }).then((r) => {
+            if (alive) {
+              setData(r);
+              setRetrievalStage("verify");
+              setLoading(false);
+            }
+          });
+        });
+    } else {
+      // Global search
+      api.search(q, { types, minConf }).then((r) => {
+        if (alive) {
+          setData(r);
+          setRetrievalStage("verify");
+          setLoading(false);
+        }
+      });
+    }
+
     return () => {
       alive = false;
     };
-  }, [q, types, minConf]);
+  }, [q, types, minConf, isDocSearch, datasheetId]);
 
   const toggle = (t: EvidenceType) =>
     setTypes((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
@@ -114,7 +149,9 @@ function VisualSearch() {
       return (
         <>
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="text-[15px] font-medium">{data.total} verified evidence regions</h2>
+            <h2 className="text-[15px] font-medium">
+              {data.total} verified evidence regions
+            </h2>
             <span className="font-mono text-[11px] text-muted-foreground">
               {data.latencyMs} ms
             </span>
@@ -193,7 +230,7 @@ function VisualSearch() {
             onChange={(e) => setInput(e.target.value)}
             aria-label="What are you looking for?"
             placeholder="What are you looking for?"
-            className="h-12 w-full rounded-lg border border-bg-secondary bg-secondary/20 pl-10 pr-24 text-[14px] outline-none focus-visible:border-primary/60"
+            className="h-12 w-full rounded-lg border bg-secondary/20 bg-secondary/20 pl-10 pr-24 text-[14px] outline-none focus-visible:border-primary/60"
           />
           <Button type="submit" size="sm" className="absolute right-2 top-1/2 -translate-y-1/2">
             Search
@@ -213,6 +250,33 @@ function VisualSearch() {
             </button>
           ))}
         </div>
+
+        <div className="flex gap-2 mb-3">
+          {SEARCH_MODES.map((mode) => (
+            <button
+              key={mode}
+              onClick={() => setSearchMode(mode as "Natural Language" | "MPN" | "Advanced")}
+              className={cn(
+                "rounded-md border px-3 py-1.5 text-[12px] font-medium transition-colors",
+                searchMode === mode
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+              )}
+            >
+              {mode}
+            </button>
+          ))}
+        </div>
+
+        {/* Document-local search mode badge */}
+        {isDocSearch && (
+          <div className="flex items-center gap-2 text-[11px] text-primary/80 mb-3">
+            <span className="bg-primary/10 px-2 py-1 rounded text-[9px]">
+              Document-local search
+            </span>
+            <span>datasheet {datasheetId}</span>
+          </div>
+        )}
 
         <div className="flex gap-2 mb-3">
           {SEARCH_MODES.map((mode) => (
@@ -287,7 +351,7 @@ function VisualSearch() {
             </div>
 
             <div>
-              <label className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
+              <label className="font-mono text-[10.px] uppercase tracking-[0.14em] text-muted-foreground">
                 Manufacturer
               </label>
               <select

@@ -105,6 +105,18 @@ export interface Evidence {
   timestamp: string;
 }
 
+/** A structured text block extracted from a PDF document page. */
+export interface DocumentTextBlock {
+  id: string;
+  documentId: string;
+  page: number;
+  blockType: "heading" | "paragraph" | "table" | "caption" | "list" | "footnote" | "header" | "footer" | "unknown";
+  text: string;
+  bbox: BoundingBox;
+  readingOrder: number;
+  confidence: number;
+}
+
 /** A ranked evidence hit returned by visual search. */
 export interface SearchResult {
   rank: number;

@@ -92,9 +92,38 @@ export const datasheets = pgTable("datasheets", {
   createdBy: integer("created_by").references(() => users.id),
   createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
   updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow(),
+  checksum: varchar("checksum", { length: 64 }),
+  version: integer("version").default(1),
 }, (t) => ({
   idxDatasheetsWorkspace: index("datasheets_workspace_idx").on(t.workspaceId),
 }))
+
+// ============================================================
+// Document Versions Model
+// ============================================================
+export const documentVersions = pgTable("document_versions", {
+  id: serial("id").primaryKey(),
+  datasheetId: integer("datasheet_id").references(() => datasheets.id, { onDelete: "cascade" }),
+  version: integer("version").notNull().default(1),
+  checksum: varchar("checksum", { length: 64 }).notNull(),
+  storageKey: varchar("storage_key", { length: 512 }),
+  pageCount: integer("page_count").notNull(),
+  mimeType: varchar("mime_type", { length: 100 }),
+  fileSize: doublePrecision("file_size"),
+  title: varchar("title", { length: 512 }),
+  fileName: varchar("file_name", { length: 512 }),
+  status: varchar("status", { length: 50 }).default("processed"),
+  processedAt: timestamp("processed_at", { mode: "string" }),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
+}, (t) => ({
+  idxVersionDatasheet: index("versions_datasheet_idx").on(t.datasheetId),
+  idxVersionChecksum: index("versions_checksum_idx").on(t.checksum),
+}))
+
+// ============================================================
+// Page Model
+// ============================================================
 
 // ============================================================
 // Page Model
@@ -208,6 +237,32 @@ export const collectionItems = pgTable("collection_items", {
 }, (t) => ({
   uniqueCollectionItem: primaryKey({ columns: [t.collectionId, t.itemType, t.itemId] }),
 }))
+
+// ============================================================
+// Document Text Blocks Model
+// ============================================================
+export const documentTextBlocks = pgTable("document_text_blocks", {
+  id: serial("id").primaryKey(),
+  documentId: integer("document_id").references(() => datasheets.id, { onDelete: "cascade" }),
+  pageNumber: integer("page_number").notNull(),
+  blockType: varchar("block_type", { length: 50 }).notNull,
+  text: text("text").notNull,
+  bboxX: doublePrecision("bbox_x").notNull(),
+  bboxY: doublePrecision("bbox_y").notNull(),
+  bboxW: doublePrecision("bbox_width").notNull(),
+  bboxH: doublePrecision("bbox_height").notNull(),
+  readingOrder: integer("reading_order").notNull,
+  confidence: doublePrecision("confidence").default(1),
+  createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
+}, (t) => ({
+  idxBlocksDocument: index("blocks_document_idx").on(t.documentId),
+  idxBlocksPage: index("blocks_page_idx").on(t.documentId, t.pageNumber),
+  idxBlocksType: index("blocks_type_idx").on(t.blockType),
+}))
+
+// ============================================================
+// Text Higlighting
+// ============================================================
 
 // ============================================================
 // Processing Jobs

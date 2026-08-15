@@ -11,4 +11,28 @@ export interface StorageProvider {
   delete(key: string): Promise<void>;
   exists(key: string): Promise<boolean>;
   getMetadata(key: string): Promise<{ size: number; mimeType: string }>;
+  /** Compute SHA-256 checksum for a file already stored */
+  computeChecksum(key: string): Promise<string>;
+}
+
+/**
+ * Document metadata stored alongside each uploaded document.
+ */
+export interface DocumentMetadata {
+  /** Unique document ID */
+  id: string;
+  /** Storage key (opaque, not exposed to browser) */
+  storageKey: string;
+  /** Original filename */
+  fileName: string;
+  /** MIME type */
+  mimeType: string;
+  /** File size in bytes */
+  size: number;
+  /** SHA-256 checksum */
+  checksum: string;
+  /** Page count */
+  pageCount: number;
+  /** Created at timestamp */
+  createdAt: string;
 }

@@ -93,7 +93,16 @@ export default defineEventHandler(async (event: H3Event) => {
       });
     }
 
-    // Validate extension and magic bytes
+    // Validate MIME type
+    const mimeType = file.type || "application/pdf";
+    if (!PDF_MIME_TYPES.includes(mimeType)) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: `Invalid MIME type: ${mimeType}. Only application/pdf is accepted.`,
+      });
+    }
+
+    // Validate extension and magic bytes (do not trust filename extension alone)
     if (!isPdfFile(fileName, fileBuffer)) {
       throw createError({
         statusCode: 400,
@@ -101,13 +110,110 @@ export default defineEventHandler(async (event: H3Event) => {
       });
     }
 
-    // 6. Compute SHA-256 hash for duplicate detection
+    // 6. Compute SHA-256 hash for duplicate detection and checksum
     const fileHash = hashBuffer(fileBuffer);
 
-    // 7. Check for duplicate within the same workspace
-    // We check if a datasheet with the same sha256 already exists in this workspace
-    // Since the schema doesn't have sha256 column yet, we skip hash-based dedup
-    // and rely on the generated storage key uniqueness.
+    // 7. Check for duplicate within the same workspace by checksum
+    // Look for an existing datasheet with the same checksum in this workspace
+    const [existingByChecksum] = await db
+      .select({ id: datasheets.id, checksum: datasheets.checksum, version: datasheets.version, title: datasheets.title })
+      .from(datasheets)
+      .where(eq(datasheets.workspaceId, activeWorkspace));
+
+    let newVersion = 1;
+    let isDuplicate = false;
+
+    if (existingByChecksum && existingByChecksum.checksum === fileHash) {
+      // Checksum matches — this is a duplicate document upload
+      isDuplicate = true;
+      newVersion = (existingByChecksum.version || 0) + 1;
+    }
+
+    // 8. Validate page count and PDF integrity
+    let pdfInfo: {
+      numPages: number;
+      info: any;
+      metadata: any;
+    } = { numPages: 0, info: {}, metadata: {} };
+
+    try {
+      pdfInfo = await new Promise((resolve, reject) => {
+        parse(fileBuffer, (err, data) => {
+          if (err) reject(err);
+          else resolve(data);
+        });
+      });
+    } catch (parseError) {
+      // If PDF parsing fails, mark job as failed and clean up
+      await storageProvider.delete(storageKey);
+      throw createError({
+        statusCode: 400,
+        statusMessage: "Invalid or corrupted PDF file.",
+      });
+    }
+
+    const pageCount = pdfInfo.numPages || 0;
+
+    // Validate page count - reject if unreasonably low or high
+    if (pageCount === 0) {
+      await storageProvider.delete(storageKey);
+      throw createError({
+        statusCode: 400,
+        statusMessage: "PDF has no pages (corrupted or empty document).",
+      });
+    }
+
+    if (pageCount > 500) {
+      await storageProvider.delete(storageKey);
+      throw createError({
+        statusCode: 400,
+        statusMessage: `PDF has ${pageCount} pages, which exceeds the maximum supported of 500.`,
+      });
+    }
+
+    // Check for encrypted/password-protected PDF
+    if (pdfInfo.metadata && pdfInfo.metadata.isEncrypted) {
+      await storageProvider.delete(storageKey);
+      throw createError({
+        statusCode: 400,
+        statusMessage: "Encrypted/password-protected PDFs are not supported. Please provide an unprotected PDF.",
+      });
+    }
+
+    // 8. Extract PDF title when available
+    let pdfTitle: string | null = null;
+    if (pdfInfo.metadata && pdfInfo.metadata.title) {
+      pdfTitle = String(pdfInfo.metadata.title);
+    } else if (pdfInfo.info && pdfInfo.info.Title) {
+      pdfTitle = String(pdfInfo.info.Title);
+    }
+
+    // 9. Extract page dimensions from PDF info
+    // pdf-parse may not always provide dimensions; fall back to defaults
+    let pageWidth = 0;
+    let pageHeight = 0;
+
+    // Try to get dimensions from PDF info/metadata
+    if (pdfInfo.info) {
+      pageWidth = pdfInfo.info.PageSize
+        ? parseFloat(pdfInfo.info.PageSize.split(/[ ,]/)[0]) || 0
+        : 0;
+      pageHeight = pdfInfo.info.PageSize
+        ? parseFloat(pdfInfo.info.PageSize.split(/[ ,]/)[1]) || 0
+        : 0;
+    }
+
+    // If still 0, try metadata
+    if (pageWidth === 0 || pageHeight === 0) {
+      if (pdfInfo.metadata) {
+        pageWidth = pdfInfo.metadata.width || 0;
+        pageHeight = pdfInfo.metadata.height || 0;
+      }
+    }
+
+    // Default page dimensions if none found
+    if (pageWidth === 0) pageWidth = 612; // Letter default
+    if (pageHeight === 0) pageHeight = 792; // Letter default
 
     // 8. Generate a datasheet ID and storage key
     const datasheetId = `ds_${uuidv4()}`;
@@ -173,7 +279,7 @@ export default defineEventHandler(async (event: H3Event) => {
     if (pageWidth === 0) pageWidth = 612; // Letter default
     if (pageHeight === 0) pageHeight = 792; // Letter default
 
-    // 12. Extract PDF title when available
+// 12. Extract PDF title when available
     let pdfTitle: string | null = null;
     if (pdfInfo.metadata && pdfInfo.metadata.title) {
       pdfTitle = String(pdfInfo.metadata.title);
@@ -181,7 +287,10 @@ export default defineEventHandler(async (event: H3Event) => {
       pdfTitle = String(pdfInfo.info.Title);
     }
 
-    // 13. Create the Datasheet database record
+    // 13. Handle duplicate detection and versioning
+    const targetVersion = isDuplicate ? newVersion : 1;
+
+    // 14. Create the Datasheet database record
     const [datasheet] = await db
       .insert(datasheets)
       .values({
@@ -189,8 +298,8 @@ export default defineEventHandler(async (event: H3Event) => {
         workspaceId: activeWorkspace,
         mpn: null,
         manufacturer: null,
-        title: pdfTitle,
-        fileName: fileName,
+        title: isDuplicate ? `${pdfTitle} (v${targetVersion})` : pdfTitle,
+        fileName: isDuplicate ? `${fileName} (v${targetVersion})` : fileName,
         storageKey,
         mimeType: "application/pdf",
         fileSize: fileSize,
@@ -199,6 +308,8 @@ export default defineEventHandler(async (event: H3Event) => {
         indexStatus: "queued",
         favorite: false,
         createdBy: user.id,
+        checksum: fileHash,
+        version: targetVersion,
       })
       .returning({
         id: datasheets.id,
@@ -208,19 +319,45 @@ export default defineEventHandler(async (event: H3Event) => {
         status: datasheets.status,
       });
 
+    // 15. Create a document version record
+    await db.insert(documentVersions).values({
+      datasheetId: datasheetId,
+      version: targetVersion,
+      checksum: fileHash,
+      storageKey,
+      pageCount,
+      mimeType: "application/pdf",
+      fileSize: fileSize,
+      title: isDuplicate ? `${pdfTitle} (v${targetVersion})` : pdfTitle,
+      fileName: isDuplicate ? `${fileName} (v${targetVersion})` : fileName,
+      status: "processed",
+      createdBy: user.id,
+    });
+
+    // 16. If this is a duplicate, mark the previous version appropriately
+    if (isDuplicate && existingByChecksum) {
+      await db
+        .update(datasheets)
+        .set({ version: targetVersion, status: "processed" })
+        .where(eq(datasheets.id, existingByChecksum.id));
+    }
+
     // 14. Create the ProcessingJob record
     const jobId = `job_${uuidv4()}`;
 
-    // Create the job with initial stages
-    // ingest and render are completed; the rest are pending
+    // Create the job with initial stages following canonical vocabulary
+    // validate and store are completed after upload; the rest are pending
     const initialStages = [
-      { key: ingestStageKey, label: "PDF ingestion", state: "completed" },
-      { key: renderStageKey, label: "Page rendering", state: "completed" },
-      { key: "layout", label: "Layout analysis", state: "pending" },
+      { key: "validate", label: "PDF validated", state: "completed" },
+      { key: "store", label: "Document stored", state: "completed" },
+      { key: "extract", label: "Content extracted", state: "pending" },
+      { key: "render", label: "Pages rendered", state: "pending" },
+      { key: "layout", label: "Layout analyzed", state: "pending" },
       { key: "regions", label: "Region detection", state: "pending" },
       { key: "embed", label: "Embedding", state: "pending" },
       { key: "index", label: "Vector indexing", state: "pending" },
-      { key: "verify", label: "Verification", state: "pending" },
+      { key: "verify", label: "Evidence verification", state: "pending" },
+      { key: "ready", label: "Ready", state: "pending" },
     ];
 
     await db.insert(processingJobs).values({
@@ -247,7 +384,7 @@ export default defineEventHandler(async (event: H3Event) => {
         processingJobId: jobId,
         stage: stage.key,
         status: stage.state,
-        startedAt: stage.key === ingestStageKey || stage.key === renderStageKey ? new Date() : null,
+        startedAt: stage.key === "validate" || stage.key === "store" ? new Date() : null,
         completedAt: stage.state === "completed" ? new Date() : null,
       });
     }

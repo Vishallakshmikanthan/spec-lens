@@ -8,6 +8,7 @@ import { EvidenceTypeBadge, ConfidenceBar } from "@/components/speclens/evidence
 import { useApiQuery } from "@/hooks/use-api-query";
 import { api } from "@/services";
 import { cn } from "@/lib/utils";
+import { PdfPageViewer } from "@/components/speclens/pdf-page-viewer";
 
 export const Route = createFileRoute("/app/datasheets/$datasheetId")({
   head: () => ({
@@ -66,7 +67,24 @@ function DatasheetDetail() {
       />
       <div className="space-y-6 px-4 py-6 sm:px-6">
         <div className="grid gap-4 sm:grid-cols-[200px_1fr]">
-          <DocPage type="pinout" mpn={ds.mpn} title={ds.title} className="mx-auto max-w-[200px]" />
+          <div className="space-y-6 px-4 py-6 sm:px-6">
+        <div className="grid gap-4 sm:grid-cols-[200px_1fr]">
+          <PdfPageViewer
+            datasheetId={datasheetId}
+            pageNumber={1}
+            initialZoom={1.5}
+            onPageChange={(page) => console.log("Page changed:", page)}
+            onZoomChange={(zoom} => console.log("Zoom changed:", zoom)}
+            evidenceRegions={evidence?.length > 0 ? evidence.map((e) => ({
+              bbox: e.bbox,
+              evidenceType: e.type,
+              title: e.title,
+              confidence: e.confidence,
+            })) : undefined}
+            onRegionClick={(bbox, type, title) => {
+              console.log("Evidence region clicked:", type, title, bbox);
+            }}
+          />
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
             {(
               [

@@ -142,4 +142,13 @@ export class LocalFsStorageProvider implements StorageProvider {
     const mimeType = mimeMap[ext] || "application/octet-stream";
     return { size: stat.size, mimeType };
   }
+
+  async computeChecksum(key: string): Promise<string> {
+    const targetPath = path.resolve(STORAGE_ROOT, key);
+    if (!fs.existsSync(targetPath)) {
+      throw new Error(`Storage file not found: ${key}`);
+    }
+    const fileBuffer = fs.readFileSync(targetPath);
+    return hashBuffer(fileBuffer);
+  }
 }
