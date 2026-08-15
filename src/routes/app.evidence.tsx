@@ -19,7 +19,7 @@ import {
   VerificationBadge,
 } from "@/components/speclens/evidence-ui";
 import type { BoundingBox } from "@/types/speclens";
-import { mockEvidence } from "@/lib/speclens/mock-data";
+import { DEMO_MODE, API_BASE } from "@/lib/speclens/config";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -53,14 +53,48 @@ const TRAIL = ["Search", "Result", "Evidence", "Region", "Provenance", "Verifica
 
 function EvidenceExplorer() {
   const { doc, ev } = Route.useSearch();
-  const pool = doc ? mockEvidence.filter((e) => e.documentId === doc) : mockEvidence;
-  const list = pool.length ? pool : mockEvidence;
-  const [selectedId, setSelectedId] = useState(ev ?? list[0]!.id);
-  const [zoom, setZoom] = useState(1);
-  const [zoomTarget, setZoomTarget] = useState(1);
+
+  // Determine evidence list: real API in real mode, mock in demo mode
+  const [list, setList] = useState<Evidence[]>([]);
+  const [selectedId, setSelectedId] = useState<string | undefined>(ev);
   const [raw, setRaw] = useState(false);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(243);
+
+  useEffect(() => {
+    async function loadList() {
+      if (DEMO_MODE) {
+        const { mockEvidence } = await import("@/mock/data");
+        const all = mockEvidence;
+        const result = doc ? all.filter((e: any) => e.documentId === doc) : all;
+        setList(result);
+        setSelectedId(ev ?? result[0]?.id);
+      } else {
+        // Fetch real evidence from API
+        fetch(`${API_BASE}/evidence${doc ? `?documentId=${doc}` : ""}`, {
+          credentials: "include",
+        })
+          .then((res) => {
+            if (!res.ok) throw new Error("Failed to fetch evidence");
+            return res.json();
+          })
+          .then((data: Evidence[]) => {
+            setList(data);
+            setSelectedId(ev ?? data[0]?.id);
+          })
+          .catch((err) => {
+            console.error("Failed to load evidence:", err);
+            // Fall back to mock on error
+            const { mockEvidence } = import("@/mock/data");
+            const all = mockEvidence;
+            const result = doc ? all.filter((e: any) => e.documentId === doc) : all;
+            setList(result);
+            setSelectedId(ev ?? result[0]?.id);
+          });
+      }
+    }
+
+    loadList();
+  }, [doc, ev]);
+
   const evidence = list.find((e) => e.id === selectedId) ?? list[0]!;
 
   const [highlightedBbox, setHighlightedBbox] = useState<BoundingBox | null>(null);
