@@ -1,0 +1,294 @@
+import { createError, defineEventHandler, getCookie, setCookie } from "h3";
+import { getDb } from "@/lib/db";
+import {
+  copilotConversations,
+  copilotMessages,
+  sessions,
+  users,
+  workspaces,
+  workspaceMembers,
+  evidence,
+  datasheets,
+  components,
+} from "@/database/schema";
+import { eq, and, ilike, or, sql } from "drizzle-orm";
+import {
+  normalizeQuestion,
+  detectComponent,
+  runRetrieval,
+  rerankEvidence,
+  selectContextSet,
+  buildEvidenceContext,
+  getNemotronSystemPrompt,
+  buildNemotronUserPrompt,
+  parseNemotronResponse,
+  validateCitations,
+  calculateConfidence,
+  cleanInvalidCitations,
+  getConversationHistory,
+  persistConversationAndMessage,
+  CopilotRateLimiter,
+} from "@/lib/speclens/copilot-utils";
+import type { H3Event } from "h3";
+
+/**
+ * POST /api/copilot
+ *
+ * Core grounding pipeline:
+ * 1. Authenticate user + verify workspace access
+ * 2. Normalize the question
+ * 3. Detect relevant component/entity
+ * 4. Run SpecLens retrieval
+ * 5. Rerank evidence
+ * 6. Select bounded context set
+ * 7. Build structured evidence context
+ * 8. Send ONLY necessary evidence context to Nemotron
+ * 9. Generate grounded answer
+ * 10. Validate citations
+ * 11. Return answer + sources + confidence
+ */
+export default defineEventHandler(async (event: H3Event) => {
+  try {
+    const db = getDb();
+
+    // --- Step 1: Authenticate user and verify workspace access ---
+    const sessionToken = getCookie(event, "speclens_session");
+    if (!sessionToken) {
+      throw createError({
+        statusCode: 401,
+        statusMessage: "Authentication required. No session found.",
+      });
+    }
+
+    // Look up session to get user
+    const [session] = await db
+      .select({ userId: users.id, workspaceId: workspaces.id })
+      .from(users)
+      .innerJoin(sessions, eq(users.id, sessions.userId))
+      .leftJoin(workspaceMembers, eq(workspaceMembers.userId, users.id))
+      .where(eq(sessions.tokenHash, sessionToken))
+      .limit(1);
+
+    if (!session) {
+      throw createError({
+        statusCode: 401,
+        statusMessage: "Invalid session.",
+      });
+    }
+
+    const userId = session.userId;
+    const workspaceId = session.workspaceId;
+
+    // Verify user is a member of the workspace (or is the creator)
+    const [member] = await db
+      .select()
+      .from(workspaceMembers)
+      .where(
+        and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, userId)),
+      )
+      .limit(1);
+
+    if (!member) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "User is not a member of this workspace.",
+      });
+    }
+
+    // --- Step 2: Parse request body ---
+    const body = await event.request.json();
+    const {
+      workspace: reqWorkspace,
+      question,
+      conversationId,
+      selectedEvidenceIds,
+      componentMpn,
+      searchFilters,
+    } = body as {
+      workspace?: string;
+      question: string;
+      conversationId?: string;
+      selectedEvidenceIds?: string[];
+      componentMpn?: string;
+      searchFilters?: Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+    };
+
+    // Use workspace from body or fall back to the authenticated user's workspace
+    const finalWorkspace = reqWorkspace || String(workspaceId);
+
+    // --- Step 3: Normalize the question ---
+    const normalizedQuestion = normalizeQuestion(question.trim());
+
+    // --- Step 4: Detect relevant component/entity ---
+    const detectedComponent = await detectComponent(
+      normalizedQuestion,
+      componentMpn,
+      finalWorkspace,
+      db,
+    );
+
+    // --- Step 5: Run SpecLens retrieval ---
+    const retrievalResults = await runRetrieval({
+      question: normalizedQuestion,
+      workspace: finalWorkspace,
+      componentMpn: detectedComponent?.mpn || undefined,
+      selectedEvidenceIds,
+      db,
+    });
+
+    // --- Step 6: Rerank evidence ---
+    const rerankedEvidence = rerankEvidence(retrievalResults);
+
+    // --- Step 7: Select bounded context set ---
+    const contextSet = selectContextSet(rerankedEvidence, 20);
+
+    // --- Step 8: Build structured evidence context ---
+    const evidenceContext = buildEvidenceContext(contextSet);
+
+    // --- Step 9: Call Nemotron with evidence context ---
+    const nemotronKey = process.env["NEMOTRON_API_KEY"];
+    if (!nemotronKey) {
+      throw createError({
+        statusCode: 500,
+        statusMessage:
+          "Nemotron API key not configured. Set NEMOTRON_API_KEY environment variable.",
+      });
+    }
+
+    // Check rate limiter
+    const rateLimiter = new CopilotRateLimiter();
+    const rateKey = `user:${userId}`;
+    if (!rateLimiter.isAllowed(rateKey, 30, 60000)) {
+      throw createError({
+        statusCode: 429,
+        statusMessage: "Rate limit exceeded. Too many requests.",
+      });
+    }
+
+    const conversationHistory = await getConversationHistory(conversationId, db);
+
+    const llmResponse = await callNemotron({
+      question: normalizedQuestion,
+      evidenceContext,
+      conversationHistory,
+      componentContext: detectedComponent,
+    });
+
+    // --- Step 10: Validate citations ---
+    const validationResult = validateCitations(llmResponse.sources, contextSet);
+
+    if (!validationResult.valid) {
+      const cleaned = cleanInvalidCitations(llmResponse.answer, validationResult);
+      // Use cleaned answer with validated sources only
+    }
+
+    // --- Step 11: Calculate confidence ---
+    const confidence = calculateConfidence(contextSet, validationResult);
+
+    // --- Step 12: Persist conversation and message ---
+    await persistConversationAndMessage({
+      db,
+      userId: Number(userId),
+      workspaceId: Number(workspaceId),
+      conversationId: conversationId || undefined,
+      question: normalizedQuestion,
+      answer: llmResponse.answer,
+      sources: validationResult.citations,
+      confidence,
+    });
+
+    // Format and return response
+    return {
+      statusCode: 200,
+      body: {
+        answer: llmResponse.answer,
+        sources: validationResult.citations,
+        confidence,
+        caveats: llmResponse.caveats || [],
+        // Include evidence context metadata for UI
+        evidenceContext: {
+          totalItems: contextSet.length,
+          hasComponentContext: !!detectedComponent,
+        },
+      },
+    };
+  } catch (error) {
+    const err = error as { statusCode?: number; statusMessage?: string };
+    console.error("Copilot endpoint error:", err);
+    throw createError({
+      statusCode: err.statusCode ?? 500,
+      statusMessage: err.statusMessage ?? "Internal server error",
+    });
+  }
+});
+
+/**
+ * Call Nemotron LLM server-side with the evidence context.
+ */
+async function callNemotron({
+  question,
+  evidenceContext,
+  conversationHistory,
+  componentContext,
+}: {
+  question: string;
+  evidenceContext: Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  conversationHistory?: unknown[];
+  componentContext?: { mpn: string; manufacturer: string } | null;
+}): Promise<{
+  answer: string;
+  sources: unknown[];
+  caveats?: string[];
+}> {
+  const nemotronKey = process.env["NEMOTRON_API_KEY"];
+  if (!nemotronKey) {
+    throw new Error("Nemotron API key not configured");
+  }
+
+  // Build the user prompt with evidence context
+  const userPrompt = buildNemotronUserPrompt({
+    question,
+    evidenceContext,
+    conversationHistory,
+    componentContext,
+  });
+
+  const response = await fetch("https://api.nVIDIA.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${nemotronKey}`,
+    },
+    body: JSON.stringify({
+      model: "nemotron",
+      messages: [
+        { role: "system", content: getNemotronSystemPrompt() },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.1,
+      max_tokens: 1024,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Nemotron API error: ${response.status} - ${errorText}`);
+  }
+
+  const data = await response.json();
+  const message = data.choices?.[0]?.message;
+
+  if (!message || !message.content) {
+    throw new Error("Nemotron returned unexpected response format");
+  }
+
+  // Parse the response
+  return parseNemotronResponse(message.content);
+}
+
+/**
+ * Truncate string to max length.
+ */
+function truncate(str: string, maxLen: number): string {
+  return str.length > maxLen ? str.slice(0, maxLen - 3) + "..." : str;
+}
