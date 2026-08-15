@@ -21,7 +21,6 @@ import type {
   ProcessingJob,
   SearchResultSet,
   SearchFilters,
-  SymbolSpec,
   SearchHistoryEntry,
   ActivityEvent,
   AppNotificationSchema,
@@ -53,6 +52,55 @@ import { qs, request, ApiError, type RequestOptions } from "./transport";
 
 export type { SpecLensApi };
 
-// NOTE: In a full implementation, the provider would be injected/configured
-// per-environment. For now we define a stub that the backend would implement.
-// The UI (DEMO_MODE) uses mockApi; the real backend uses this structure.
+/**
+ * List all processing jobs for the authenticated user's workspace.
+ */
+export async function listJobs(): Promise<ProcessingJob[]> {
+  return request<ProcessingJob[]>("/api/jobs", { method: "GET" });
+}
+
+/**
+ * Get a specific processing job by ID.
+ */
+export async function getJob(id: string): Promise<ProcessingJob | undefined> {
+  return request<ProcessingJob>(`/api/jobs/${id}`, { method: "GET" });
+}
+
+/**
+ * List all datasheets for the authenticated user's workspace.
+ */
+export async function listDatasheets(query?: string): Promise<Datasheet[]> {
+  const params: Record<string, string | number | boolean | undefined> = {};
+  if (query) {
+    params.q = query;
+  }
+  return request<Datasheet[]>("/api/datasheets", { method: "GET", qs: params });
+}
+
+/**
+ * Get a specific datasheet by ID.
+ */
+export async function getDatasheet(id: string): Promise<Datasheet | undefined> {
+  return request<Datasheet>(`/api/datasheets/${id}`, { method: "GET" });
+}
+
+/**
+ * Upload a datasheet PDF and start processing.
+ * Note: This is handled by the POST /api/datasheets/upload H3 route,
+ * but this method is kept for API contract compatibility.
+ */
+export async function uploadDatasheet(file: FormData): Promise<ProcessingJob> {
+  return request<ProcessingJob>("/api/datasheets/upload", {
+    method: "POST",
+    body: file,
+  });
+}
+
+/**
+ * Index a datasheet (trigger the indexing pipeline).
+ */
+export async function indexDatasheet(id: string): Promise<{ jobId: string }> {
+  return request<{ jobId: string }>(`/api/datasheets/${id}/index`, {
+    method: "POST",
+  });
+}

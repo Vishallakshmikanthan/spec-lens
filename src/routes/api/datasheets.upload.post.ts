@@ -9,7 +9,7 @@ import { LocalFsStorageProvider } from "@/storage/local";
 import { z } from "zod";
 import parse from "pdf-parse";
 import type { ProcessingJob, Datasheet } from "@/types/speclens";
-import { PROCESSING_STAGES } from "@/lib/speclens/stages";
+import { PROCESSING_STAGES, UPLOAD_STAGE_LABELS } from "@/lib/speclens/stages";
 
 // Maximum file size: 200 MB (configurable)
 const MAX_DATASHEET_SIZE_BYTES = 200 * 1024 * 1024;
@@ -19,9 +19,15 @@ const PDF_MIME_TYPES = ["application/pdf"];
 
 const MAX_DATASHEET_SIZE_MB = 200;
 
-// Allowed PDF stage labels for the processing job
-const ingestStageKey = "ingest";
-const renderStageKey = "render";
+// Canonical processing stage keys (matching PROCESSING_STAGES and DB schema)
+const STAGE_INGEST = "ingest";
+const STAGE_RENDER = "render";
+const STAGE_LAYOUT = "layout";
+const STAGE_REGIONS = "regions";
+const STAGE_EMBED = "embed";
+const STAGE_INDEX = "index";
+const STAGE_VERIFY = "verify";
+const STAGE_READY = "ready";
 
 export default defineEventHandler(async (event: H3Event) => {
   try {
@@ -227,65 +233,11 @@ export default defineEventHandler(async (event: H3Event) => {
     const storageProvider = new LocalFsStorageProvider();
     await storageProvider.put(fileBuffer, storageKey);
 
-    // 10. Extract PDF metadata using pdf-parse
-    let pdfInfo: {
-      numPages: number;
-      info: any;
-      metadata: any;
-    } = { numPages: 0, info: {}, metadata: {} };
-
-    try {
-      pdfInfo = await new Promise((resolve, reject) => {
-        parse(fileBuffer, (err, data) => {
-          if (err) reject(err);
-          else resolve(data);
-        });
-      });
-    } catch (parseError) {
-      // If PDF parsing fails, mark job as failed and clean up
-      await storageProvider.delete(storageKey);
-      throw createError({
-        statusCode: 400,
-        statusMessage: "Invalid or corrupted PDF file.",
-      });
-    }
-
-    const pageCount = pdfInfo.numPages || 0;
+    // 10. PDF metadata already extracted above (lines 138-222)
+    // pageCount, pdfTitle, pageWidth, pageHeight are all available from the first parse
 
     // 11. Extract page dimensions from PDF info
-    // pdf-parse may not always provide dimensions; fall back to defaults
-    let pageWidth = 0;
-    let pageHeight = 0;
-
-    // Try to get dimensions from PDF info/metadata
-    if (pdfInfo.info) {
-      pageWidth = pdfInfo.info.PageSize
-        ? parseFloat(pdfInfo.info.PageSize.split(/[ ,]/)[0]) || 0
-        : 0;
-      pageHeight = pdfInfo.info.PageSize
-        ? parseFloat(pdfInfo.info.PageSize.split(/[ ,]/)[1]) || 0
-        : 0;
-    }
-
-    // If still 0, try metadata
-    if (pageWidth === 0 || pageHeight === 0) {
-      if (pdfInfo.metadata) {
-        pageWidth = pdfInfo.metadata.width || 0;
-        pageHeight = pdfInfo.metadata.height || 0;
-      }
-    }
-
-    // Default page dimensions if none found
-    if (pageWidth === 0) pageWidth = 612; // Letter default
-    if (pageHeight === 0) pageHeight = 792; // Letter default
-
-// 12. Extract PDF title when available
-    let pdfTitle: string | null = null;
-    if (pdfInfo.metadata && pdfInfo.metadata.title) {
-      pdfTitle = String(pdfInfo.metadata.title);
-    } else if (pdfInfo.info && pdfInfo.info.Title) {
-      pdfTitle = String(pdfInfo.info.Title);
-    }
+    // (already extracted above in step 9)
 
     // 13. Handle duplicate detection and versioning
     const targetVersion = isDuplicate ? newVersion : 1;
@@ -342,23 +294,19 @@ export default defineEventHandler(async (event: H3Event) => {
         .where(eq(datasheets.id, existingByChecksum.id));
     }
 
-    // 14. Create the ProcessingJob record
+    // Create the ProcessingJob record
     const jobId = `job_${uuidv4()}`;
 
-    // Create the job with initial stages following canonical vocabulary
-    // validate and store are completed after upload; the rest are pending
-    const initialStages = [
-      { key: "validate", label: "PDF validated", state: "completed" },
-      { key: "store", label: "Document stored", state: "completed" },
-      { key: "extract", label: "Content extracted", state: "pending" },
-      { key: "render", label: "Pages rendered", state: "pending" },
-      { key: "layout", label: "Layout analyzed", state: "pending" },
-      { key: "regions", label: "Region detection", state: "pending" },
-      { key: "embed", label: "Embedding", state: "pending" },
-      { key: "index", label: "Vector indexing", state: "pending" },
-      { key: "verify", label: "Evidence verification", state: "pending" },
-      { key: "ready", label: "Ready", state: "pending" },
-    ];
+    // Use canonical processing stages vocabulary from stages.ts
+    // validate and store are completed after upload; rest are pending
+    const initialStages = PROCESSING_STAGES.map((stage) => ({
+      key: stage.key,
+      label: stage.label,
+      state: stage.key === "validate" || stage.key === "store" ? "completed" : "pending",
+    }));
+
+    // Validate: first 2 stages (validate, store) are completed after upload
+    // Remaining stages pending and will be updated by background worker
 
     await db.insert(processingJobs).values({
       id: jobId,
@@ -369,7 +317,7 @@ export default defineEventHandler(async (event: H3Event) => {
       fileSize: fileSize,
       mpn: null,
       status: "processing",
-      progress: 30, // 30%: ingest + render done
+      progress: 30, // ingest + store = 30% complete
       startedAt: new Date(),
       completedAt: null,
       error: null,
@@ -378,14 +326,21 @@ export default defineEventHandler(async (event: H3Event) => {
       updatedAt: new Date(),
     });
 
-    // Create the processing stages entries
+    // Create the processing stages entries using canonical vocabulary
     for (const stage of initialStages) {
+      const stageStartedAt = stage.key === "validate" || stage.key === "store"
+        ? new Date()
+        : null;
+      const stageCompletedAt = stage.state === "completed"
+        ? new Date()
+        : null;
+
       await db.insert(processingStages).values({
         processingJobId: jobId,
         stage: stage.key,
         status: stage.state,
-        startedAt: stage.key === "validate" || stage.key === "store" ? new Date() : null,
-        completedAt: stage.state === "completed" ? new Date() : null,
+        startedAt: stageStartedAt,
+        completedAt: stageCompletedAt,
       });
     }
 
@@ -407,10 +362,24 @@ export default defineEventHandler(async (event: H3Event) => {
 
     await db.batch(pagePromises);
 
-    // 16. Update progress to reflect page creation
+    // 16. Calculate progress from actual completed stages
+    // progress = (completedStages / totalStages) * 100
+    const [jobStages] = await db
+      .select()
+      .from(processingStages)
+      .where(eq(processingStages.processingJobId, jobId));
+
+    const completedStages = jobStages.filter(
+      (s) => s.status === "completed",
+    ).length;
+    const totalStages = jobStages.length;
+    const calculatedProgress = totalStages > 0
+      ? Math.round((completedStages / totalStages) * 100)
+      : 0;
+
     await db
       .update(processingJobs)
-      .set({ progress: 50 })
+      .set({ progress: calculatedProgress })
       .where(eq(processingJobs.id, jobId));
 
     // 17. Emit observability log (structured log)
@@ -433,7 +402,7 @@ export default defineEventHandler(async (event: H3Event) => {
           id: jobId,
           fileName: fileName,
           status: "processing",
-          progress: 50,
+          progress: calculatedProgress,
           pages: pageCount,
           stages: initialStages,
         },
