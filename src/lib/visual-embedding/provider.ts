@@ -28,6 +28,19 @@ export interface EmbeddingConfig {
   timeoutMs?: number;
 }
 
+export interface EmbeddingConfig {
+  /** Model identifier (e.g., "nvidia/nemotron", "all-MiniLM-L6-v2") */
+  model: string;
+  /** Embedding dimension must match the pgvector column dimension */
+  dimension: VisualEmbeddingDimension;
+  /** Similarity metric: cosine, l2, or ip (inner product) */
+  metric: "cosine" | "l2" | "ip";
+  /** Optional API base URL for hosted providers */
+  apiBase?: string;
+  /** Optional timeout in milliseconds */
+  timeoutMs?: number;
+}
+
 /**
  * Embed a single image buffer/FILE into a vector.
  */

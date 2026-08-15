@@ -15,6 +15,14 @@ import { constructEmbeddingText, computeContentHash } from "./service";
 import { Evidence } from "@/types/speclens";
 
 /**
+ * Search mode types.
+ * - "text": text-only retrieval (existing behavior)
+ * - "visual": visual-only retrieval (existing behavior)
+ * - "hybrid": combined text + visual retrieval with reranking
+ */
+export type SearchMode = "text" | "visual" | "hybrid";
+
+/**
  * Result of a similarity search candidate.
  */
 interface SimilarityCandidate {

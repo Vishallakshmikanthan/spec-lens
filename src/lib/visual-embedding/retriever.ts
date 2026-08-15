@@ -8,6 +8,14 @@
  *   Query visual embedding → pgvector similarity → candidate filter → rank → paginate
  */
 import { VisualEmbeddingProvider, VisualEmbeddingMetadata } from "./provider";
+
+/**
+ * Search mode types.
+ * - "text": text-only retrieval (existing behavior)
+ * - "visual": visual-only retrieval (existing behavior)
+ * - "hybrid": combined text + visual retrieval with reranking
+ */
+export type SearchMode = "text" | "visual" | "hybrid";
 import { evidence, evidenceEmbeddings, workspaces, datasheets } from "@/database/schema";
 import { db } from "@/lib/db";
 import { eq } from "drizzle-orm";
