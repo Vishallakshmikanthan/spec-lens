@@ -23,7 +23,7 @@ function initDb() {
   db = drizzle(sql, { schema })
 }
 
-export { db, getDb }
+export { db }
 
 export const database = schema
 

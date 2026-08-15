@@ -9,7 +9,11 @@ import {
   doublePrecision,
   index,
   primaryKey,
+  vector,
 } from "drizzle-orm"
+
+// pgvector extension
+import { type Vector } from "pgvector"
 
 // ============================================================
 // Core: Users
@@ -355,34 +359,49 @@ export const symbolPins = pgTable("symbol_pins", {
 }))
 
 // ============================================================
-// pgvector Preparation: document_embeddings
+// pgvector: document_embeddings
 // ============================================================
-// Embedding dimension is configurable via environment/DIMENSION env var (default: 384)
-// The embedding column stores pgvector data. When pgvector extension is enabled
-// in PostgreSQL, this column type will be vector(384).
-// Do not generate vectors in this phase - only prepare the schema.
+// Embedding dimension configured via environment/DIMENSION env var (default: 384)
+// This must match the embedding provider model dimension exactly.
+// Stores pgvector embeddings for whole-document semantic search.
+// Content hash tracking prevents redundant embedding generation.
 export const documentEmbeddings = pgTable("document_embeddings", {
   id: serial("id").primaryKey(),
   workspaceId: integer("workspace_id").references(() => workspaces.id, { onDelete: "cascade" }),
   datasheetId: integer("datasheet_id").references(() => datasheets.id, { onDelete: "cascade" }),
-  // Vector dimension configured by embedding model; default documented as 384 (open-source model size)
-  embedding: text("embedding"), // Will be stored as pgvector when extension is enabled
+  // Vector dimension configured by embedding model; must match provider exactly
+  embedding: vector("embedding", { dimension: 384 }), // pgvector type
+  contentHash: varchar("content_hash", { length: 64 }), // SHA-256 hash of embedding input
+  embeddingModel: varchar("embedding_model", { length: 100 }), // e.g., "nvidia/nemotron"
+  embeddingVersion: varchar("embedding_version", { length: 50 }), // model version
+  embeddingDimension: integer("embedding_dimension").default(384),
+  metric: varchar("metric", { length: 20 }).default("cosine"), // cosine | l2 | ip
   createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
 }, (t) => ({
   idxDocEmbedWorkspace: index("doc_emb_workspace_idx").on(t.workspaceId),
+  idxDocEmbedDatasheet: index("doc_emb_datasheet_idx").on(t.datasheetId),
+  idxDocEmbedHash: index("doc_emb_hash_idx").on(t.contentHash),
 }))
 
 // ============================================================
-// pgvector Preparation: evidence_embeddings
+// pgvector: evidence_embeddings
 // ============================================================
+// Embedding for individual evidence records (fine-grained semantic search)
+// Content hash prevents redundant embedding generation for unchanged evidence.
 export const evidenceEmbeddings = pgTable("evidence_embeddings", {
   id: serial("id").primaryKey(),
   workspaceId: integer("workspace_id").references(() => workspaces.id, { onDelete: "cascade" }),
   evidenceId: integer("evidence_id").references(() => evidence.id, { onDelete: "cascade" }),
-  // Vector dimension configured by embedding model; default documented as 384 (open-source model size)
-  embedding: text("embedding"), // Will be stored as pgvector when extension is enabled
+  // Vector dimension configured by embedding model; must match provider exactly
+  embedding: vector("embedding", { dimension: 384 }), // pgvector type
+  contentHash: varchar("content_hash", { length: 64 }), // SHA-256 hash of embedding input
+  embeddingModel: varchar("embedding_model", { length: 100 }), // e.g., "nvidia/nemotron"
+  embeddingVersion: varchar("embedding_version", { length: 50 }), // model version
+  embeddingDimension: integer("embedding_dimension").default(384),
+  metric: varchar("metric", { length: 20 }).default("cosine"), // cosine | l2 | ip
   createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
 }, (t) => ({
   idxEvidenceEmbedWorkspace: index("evidence_emb_workspace_idx").on(t.workspaceId),
   idxEvidenceEmbedEvidence: index("evidence_emb_evidence_idx").on(t.evidenceId),
+  idxEvidenceEmbedHash: index("evidence_emb_hash_idx").on(t.contentHash),
 }))

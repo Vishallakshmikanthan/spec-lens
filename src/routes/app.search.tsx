@@ -11,7 +11,7 @@ import {
   evidenceIcon,
 } from "@/components/speclens/evidence-ui";
 import { EVIDENCE_TYPE_LABEL, searchExamples } from "@/lib/speclens/mock-data";
-import { api } from "@/lib/speclens/api";
+import { api, DEMO_MODE } from "@/lib/speclens/api";
 import type { EvidenceType, SearchResultSet, SearchFilters } from "@/lib/speclens/types";
 import { cn } from "@/lib/utils";
 
@@ -116,7 +116,7 @@ function VisualSearch() {
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="text-[15px] font-medium">{data.total} verified evidence regions</h2>
             <span className="font-mono text-[11px] text-muted-foreground">
-              {data.latencyMs} ms · demo index
+              {data.latencyMs} ms
             </span>
           </div>
           <ul className="space-y-3">
@@ -193,7 +193,7 @@ function VisualSearch() {
             onChange={(e) => setInput(e.target.value)}
             aria-label="What are you looking for?"
             placeholder="What are you looking for?"
-            className="h-12 w-full rounded-lg border border-border bg-surface pl-10 pr-24 text-[14px] outline-none focus-visible:border-primary/60"
+            className="h-12 w-full rounded-lg border border-bg-secondary bg-secondary/20 pl-10 pr-24 text-[14px] outline-none focus-visible:border-primary/60"
           />
           <Button type="submit" size="sm" className="absolute right-2 top-1/2 -translate-y-1/2">
             Search

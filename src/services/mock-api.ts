@@ -233,7 +233,7 @@ export const mockApi: SpecLensApi = {
     return mockHistory;
   },
 
-  async auth: {
+  auth: {
     login: async (email: string, password: string) => {
       await delay(200);
       // In demo mode, any email/password "works" and navigates to /app
