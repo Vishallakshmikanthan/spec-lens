@@ -388,20 +388,34 @@ export const documentEmbeddings = pgTable("document_embeddings", {
 // ============================================================
 // Embedding for individual evidence records (fine-grained semantic search)
 // Content hash prevents redundant embedding generation for unchanged evidence.
+// Stores BOTH text and visual embeddings, distinguished by embeddingType.
+// Text embeddings use the 'embedding' column; visual embeddings use the
+// 'visual_embedding' column. This allows both to coexist per evidence record.
 export const evidenceEmbeddings = pgTable("evidence_embeddings", {
   id: serial("id").primaryKey(),
   workspaceId: integer("workspace_id").references(() => workspaces.id, { onDelete: "cascade" }),
   evidenceId: integer("evidence_id").references(() => evidence.id, { onDelete: "cascade" }),
-  // Vector dimension configured by embedding model; must match provider exactly
-  embedding: vector("embedding", { dimension: 384 }), // pgvector type
+  // Text embedding for semantic search of evidence metadata
+  embedding: vector("embedding", { dimension: 384 }), // pgvector type - TEXT embeddings
+  // Visual embedding for image-based similarity search
+  visualEmbedding: vector("visual_embedding", { dimension: 384 }), // pgvector type - VISUAL embeddings (nullable)
+  // Content hash for text embedding dedup
   contentHash: varchar("content_hash", { length: 64 }), // SHA-256 hash of embedding input
+  // Visual content hash for visual embedding dedup
+  visualContentHash: varchar("visual_content_hash", { length: 64 }), // SHA-256 hash of image buffer
   embeddingModel: varchar("embedding_model", { length: 100 }), // e.g., "nvidia/nemotron"
   embeddingVersion: varchar("embedding_version", { length: 50 }), // model version
+  // Text model tracking
   embeddingDimension: integer("embedding_dimension").default(384),
+  // Visual model tracking
+  visualEmbeddingModel: varchar("visual_embedding_model", { length: 100 }), // e.g., "clip-vit-base"
+  visualEmbeddingVersion: varchar("visual_embedding_version", { length: 50 }), // model version
+  visualEmbeddingDimension: integer("visual_embedding_dimension").default(384),
   metric: varchar("metric", { length: 20 }).default("cosine"), // cosine | l2 | ip
   createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
 }, (t) => ({
   idxEvidenceEmbedWorkspace: index("evidence_emb_workspace_idx").on(t.workspaceId),
   idxEvidenceEmbedEvidence: index("evidence_emb_evidence_idx").on(t.evidenceId),
   idxEvidenceEmbedHash: index("evidence_emb_hash_idx").on(t.contentHash),
+  idxEvidenceVisualHash: index("evidence_visual_hash_idx").on(t.visualContentHash),
 }))

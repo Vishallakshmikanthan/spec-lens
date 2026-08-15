@@ -63,6 +63,7 @@ export interface SpecLensApi {
   listJobs(): Promise<ProcessingJob[]>;
   getJob(id: string): Promise<ProcessingJob | undefined>;
   search(query: string, filters?: SearchFilters): Promise<SearchResultSet>;
+  visualSearch(image: File, filters?: VisualSearchFilters): Promise<VisualSearchResultSet>;
   getEvidence(id: string): Promise<Evidence | undefined>;
   listEvidence(documentId?: string): Promise<Evidence[]>;
   getComponent(mpn: string): Promise<ComponentIntel | undefined>;

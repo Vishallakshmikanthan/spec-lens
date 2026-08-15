@@ -140,6 +140,33 @@ export interface Component {
   packages: string[];
 }
 
+/** Filters for visual search API. */
+export interface VisualSearchFilters {
+  types?: EvidenceType[];
+  manufacturer?: string;
+  documentId?: string;
+  minConfidence?: number;
+  page?: number | null;
+}
+
+/** Results from a visual search. */
+export interface VisualSearchResult {
+  rank: number;
+  evidence: Evidence;
+  visualSimilarity: number;
+  confidence: number;
+  retrievalScore: number;
+}
+
+/** A ranked evidence hit returned by visual search. */
+export interface VisualSearchResultSet {
+  queryImageName: string;
+  latencyMs: number;
+  total: number;
+  results: VisualSearchResult[];
+  facets: { type: EvidenceType; count: number }[];
+}
+
 export interface ComponentIntel {
   mpn: string;
   manufacturer: string;

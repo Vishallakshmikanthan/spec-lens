@@ -374,6 +374,74 @@ export const ActivityEventSchema = z.object({
   at: z.string(),
 });
 
+export const SearchHistoryEntrySchema = z.object({
+  id: z.string(),
+  query: z.string(),
+  mpn: z.string(),
+  results: z.number(),
+  bestConfidence: z.number(),
+  at: z.string(),
+});
+
+/* -------------------------------------------------------------------------
+ * Visual Search
+ * -------------------------------------------------------------------------*/
+
+export const VisualSearchResultSchema = z.object({
+  evidence: EvidenceSchema,
+  visualSimilarity: z.number(),
+  confidence: z.number(),
+  retrievalScore: z.number(),
+});
+
+export const VisualSearchResultSetSchema = z.object({
+  queryImageId: z.string(),
+  latencyMs: z.number(),
+  total: z.number(),
+  results: z.array(VisualSearchResultSchema),
+  facets: z.array(
+    z.object({
+      type: z.enum([
+        "pinout",
+        "package",
+        "block-diagram",
+        "timing",
+        "application-circuit",
+        "electrical-curve",
+        "mechanical",
+        "absolute-maximum",
+        "functional-diagram",
+        "other",
+      ]),
+      count: z.number(),
+    }),
+  ),
+});
+
+export const VisualSearchFiltersSchema = z.object({
+  types: z
+    .array(
+      z.enum([
+        "pinout",
+        "package",
+        "block-diagram",
+        "timing",
+        "application-circuit",
+        "electrical-curve",
+        "mechanical",
+        "absolute-maximum",
+        "functional-diagram",
+        "other",
+      ]),
+    )
+    .optional(),
+  manufacturer: z.string().optional(),
+  documentId: z.string().optional(),
+  minConfidence: z.number().optional(),
+  page: z.number().optional(),
+})
+  .strict();
+
 /* -------------------------------------------------------------------------
  * AppNotification
  * -------------------------------------------------------------------------*/
@@ -416,3 +484,5 @@ export type SymbolSpec = z.infer<typeof SymbolSpecSchema>;
 export type SearchHistoryEntry = z.infer<typeof SearchHistoryEntrySchema>;
 export type ActivityEvent = z.infer<typeof ActivityEventSchema>;
 export type AppNotification = z.infer<typeof AppNotificationSchema>;
+export type VisualSearchResultSet = z.infer<typeof VisualSearchResultSetSchema>;
+export type VisualSearchFilters = z.infer<typeof VisualSearchFiltersSchema>;

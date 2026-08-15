@@ -19,6 +19,40 @@ import type {
   Datasheet,
   Evidence,
   ProcessingJob,
+  SearchResultSet,
+  SearchFilters,
+  SymbolSpec,
+  SearchHistoryEntry,
+  ActivityEvent,
+  AppNotificationSchema,
+  VisualSearchResultSetSchema,
+  VisualSearchFiltersSchema,
+} from "@/lib/speclens/schema";
+import type {
+  ActivityEvent,
+  Analytics,
+  AppNotification,
+  Collection,
+  ComponentIntel,
+  CopilotMessage,
+  Datasheet,
+  Evidence,
+  ProcessingJob,
+  SearchResultSet,
+  SymbolSpec,
+  User,
+  Workspace,
+} from "@/types/speclens";
+import { z } from "zod";
+import { executeSearch } from "@/lib/embedding/search-service";
+import { executeVisualSearch } from "@/lib/visual-embedding/search-service";
+import { EmbeddingProvider, EmbeddingConfig } from "@/lib/embedding/provider";
+import { VisualEmbeddingProvider, VisualEmbeddingConfig } from "@/lib/visual-embedding/provider";
+  ComponentIntel,
+  CopilotMessage,
+  Datasheet,
+  Evidence,
+  ProcessingJob,
   SearchFilters,
   SearchHistoryEntry,
   SearchResultSet,
@@ -45,9 +79,12 @@ import {
   SearchHistoryEntrySchema,
   ActivityEventSchema,
   AppNotificationSchema,
+  VisualSearchResultSetSchema,
+  VisualSearchFiltersSchema,
 } from "@/lib/speclens/schema";
 import { executeSearch } from "@/lib/embedding/search-service";
-import { EmbeddingProvider, EmbeddingConfig } from "@/lib/embedding/provider";
+import { executeVisualSearch } from "@/lib/visual-embedding/search-service";
+import { VisualEmbeddingProvider, VisualEmbeddingConfig } from "@/lib/visual-embedding/provider";
 
 // NOTE: In a full implementation, the provider would be injected/configured
 // per-environment. For now we define a stub that the backend would implement.
@@ -157,6 +194,36 @@ class LocalProvider implements EmbeddingProvider {
   }
 }
 
+/**
+ * Local visual embedding provider using hash-based approach.
+ * Generates deterministic visual embeddings from image content.
+ * Used when no vision API key is configured.
+ * This is NOT suitable for production visual search but keeps the UI running in DEMO_MODE.
+ */
+class LocalVisualProvider implements VisualEmbeddingProvider {
+  private config: VisualEmbeddingConfig;
+
+  constructor(config: VisualEmbeddingConfig) {
+    this.config = config;
+  }
+
+  async embedImage(image: Buffer | File): Promise<number[]> {
+    const buffer = image instanceof File ? await image.arrayBuffer() : Buffer.from(image as Buffer);
+    const hash = require('crypto').createHash('sha256').update(buffer).digest();
+    const dimension = this.config.dimension;
+    const result: number[] = [];
+    for (let i = 0; i < dimension; i++) {
+      const byte = hash[i % hash.length];
+      result.push((byte / 255 - 0.5) * 2);
+    }
+    return result;
+  }
+
+  async embedImages(images: Buffer | File[]): Promise<number[][]> {
+    return Promise.all(images.map((img) => this.embedImage(img)));
+  }
+}
+
 // Instantiate the appropriate provider based on environment configuration
 const config: EmbeddingConfig = {
   model: process.env.EMBEDDING_MODEL || "nvidia/nemotron",
@@ -170,6 +237,23 @@ if (process.env.NEMOTRON_API_KEY) {
   provider = new NemotronProvider(config);
 } else {
   provider = new LocalProvider(config);
+}
+
+// Visual embedding provider - separate from text provider for independence
+// Uses same config but for visual model; falls back to local visual provider if no vision API
+const visualConfig: VisualEmbeddingConfig = {
+  model: process.env.VISUAL_EMBEDDING_MODEL || "local-visual",
+  dimension: Number(process.env.VISUAL_EMBEDDING_DIMENSION) || 384,
+  metric: (process.env.VISUAL_EMBEDDING_METRIC as "cosine" | "l2" | "ip") || "cosine",
+};
+
+let visualProvider: VisualEmbeddingProvider;
+if (process.env.VISUAL_API_KEY) {
+  // In a full implementation, would use a vision API provider
+  // For now, fall through to local visual provider
+  visualProvider = new LocalVisualProvider(visualConfig);
+} else {
+  visualProvider = new LocalVisualProvider(visualConfig);
 }
 
 export const realApi: SpecLensApi = {
@@ -246,6 +330,64 @@ export const realApi: SpecLensApi = {
 
     // DEMO_MODE fallback: use mock search
     return mockApi.search(query, filters);
+  },
+
+  visualSearch: async (image: File, filters: VisualSearchFilters = {}) => {
+    // Step 1: Validate image and get workspace context
+    // Step 2: Embed query image (using configured provider)
+    // Step 3: Perform pgvector visual similarity search
+    // Step 4: Apply workspace authorization (already in retrieval)
+    // Step 5: Apply metadata filters
+    // Step 6: Return ranked results
+
+try {
+      const result = await executeVisualSearch(
+        {
+          image,
+          filters,
+        },
+        /* workspaceId will be obtained from auth context */ 1, // TODO: pass real workspaceId
+        provider,
+        config
+      );
+
+      // Validate and return
+      return VisualSearchResultSetSchema.parse({
+        queryImageName: result.queryImageId,
+        latencyMs: result.latencyMs,
+        total: result.total,
+        results: result.results,
+        facets: result.facets,
+      });
+    } catch (error: any) {
+      // If visual embedding fails in REAL MODE, return explicit error - NO fallback
+      if (process.env.DEMO_MODE !== "true") {
+        throw new ApiError(
+          500,
+          "visual_embedding_error",
+          error.message || "Visual search embedding generation failed",
+          { image: image.name }
+        );
+      }
+      // In demo mode - return empty visual search results
+      // The UI will display appropriate messaging for demo mode
+      return {
+        queryImageName: image.name || 'unknown',
+        latencyMs: 0,
+        total: 0,
+        results: [],
+facets: [],
+      };
+    }
+    // In demo mode - return empty visual search results
+    // The UI will display appropriate messaging for demo mode
+    return {
+      queryImageName: image.name || 'unknown',
+      latencyMs: 0,
+      total: 0,
+      results: [],
+      facets: [],
+    };
   },
 
   getEvidence: (id) =>
