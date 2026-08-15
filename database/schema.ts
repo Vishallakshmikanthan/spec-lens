@@ -103,6 +103,11 @@ export const datasheetPages = pgTable("datasheet_pages", {
   height: doublePrecision("height"),
   storageKey: varchar("storage_key", { length: 512 }),
   text: text("text"),
+  renderStatus: varchar("render_status", { length: 50 }).default("pending"),
+  renderFormat: varchar("render_format", { length: 10 }).default("webp"),
+  renderedAt: timestamp("rendered_at", { mode: "string" }),
+  renderWidth: doublePrecision("render_width"),
+  renderHeight: doublePrecision("render_height"),
   createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
 }, (t) => ({
   idxPagesDatasheet: index("pages_datasheet_idx").on(t.datasheetId),
