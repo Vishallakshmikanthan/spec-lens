@@ -34,6 +34,8 @@ import type {
   Analytics,
   AppNotification,
   Collection,
+  CircuitSpec,
+  CircuitVersion,
   ComponentIntel,
   CopilotMessage,
   Datasheet,
@@ -43,6 +45,7 @@ import type {
   SearchHistoryEntry,
   SearchResultSet,
   SymbolSpec,
+  SymbolVersion,
   User,
   Workspace,
 } from "@/types/speclens";
@@ -69,16 +72,11 @@ export interface SpecLensApi {
   getComponent(mpn: string): Promise<ComponentIntel | undefined>;
   askCopilot(question: string): Promise<CopilotMessage>;
   generateSymbol(mpn: string): Promise<SymbolSpec>;
-  getAnalytics(): Promise<Analytics>;
-  listCollections(): Promise<Collection[]>;
-  getSession(): Promise<{ user: User; workspaces: Workspace[] }>;
-  listActivity(): Promise<ActivityEvent[]>;
-  listNotifications(): Promise<AppNotification[]>;
-  listHistory(): Promise<SearchHistoryEntry[]>;
-  auth: {
-    login: (email: string, password: string) => Promise<{ authenticated: boolean; statusMessage?: string }>;
-    signup: (name: string, email: string, password: string, passwordConfirmation: string, workspaceName?: string) => Promise<{ authenticated: boolean; statusMessage?: string }>;
-    logout: () => Promise<{ authenticated: boolean }>;
-    session: () => Promise<{ authenticated: boolean; user?: any; workspace?: any; memberships?: any[] }>;
-  };
-}
+  getSymbol(id: string): Promise<SymbolSpec | undefined>;
+  validateSymbol(id: string): Promise<{ passed: boolean; checks: string[] }>;
+  createSymbolVersion(mpn: string, evidenceId: string): Promise<SymbolVersion>;
+  getSymbolVersions(id: string): Promise<SymbolVersion[]>;
+  generateCircuit(request: { mpn: string; request: string }): Promise<CircuitSpec>;
+  getCircuit(id: string): Promise<CircuitSpec | undefined>;
+  validateCircuit(id: string): Promise<{ passed: boolean; errors: string[]; warnings: string[] }>;
+  listCircuits(): Promise<CircuitSpec[]>;

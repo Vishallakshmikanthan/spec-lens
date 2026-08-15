@@ -334,8 +334,15 @@ export const CopilotMessageSchema = z.object({
  * -------------------------------------------------------------------------*/
 
 export const SymbolPinSchema = z.object({
-  number: z.string(),
+  pinNumber: z.string(),
   name: z.string(),
+  type: z.enum(["signal", "power", "ground", "input", "output", "nc"]),
+  direction: z.enum(["in", "out", "bidirectional"]),
+  x: z.number(),
+  y: z.number(),
+  length: z.number(),
+  electricalType: z.string(),
+  description: z.string(),
   electrical: z.string(),
   side: z.enum(["left", "right", "top", "bottom"]),
   evidenceId: z.string(),
@@ -347,6 +354,55 @@ export const SymbolSpecSchema = z.object({
   pins: z.array(SymbolPinSchema),
   validation: z.array(z.object({ label: z.string(), ok: z.boolean() })),
   stage: z.enum(["spec", "validation", "compilation", "preview"]),
+});
+
+/* -------------------------------------------------------------------------
+ * Circuit types
+ * -------------------------------------------------------------------------*/
+
+export const CircuitParameterSchema = z.object({
+  name: z.string(),
+  value: z.string(),
+  units: z.string(),
+  formula: z.string().optional(),
+  inputs: z.record(z.string()).optional(),
+  result: z.string().optional(),
+});
+
+export const CircuitComponentSchema = z.object({
+  id: z.string(),
+  mpn: z.string(),
+  reference: z.string(),
+  value: z.string(),
+  package: z.string(),
+  symbol: z.string(),
+  evidenceIds: z.array(z.string()),
+});
+
+export const CircuitConnectionSchema = z.object({
+  from: z.string(),
+  to: z.string(),
+  net: z.string(),
+});
+
+export const CircuitSpecSchema = z.object({
+  id: z.string(),
+  mpn: z.string(),
+  title: z.string(),
+  description: z.string(),
+  components: z.array(CircuitComponentSchema),
+  connections: z.array(CircuitConnectionSchema),
+  nets: z.array(z.string()),
+  parameters: z.array(CircuitParameterSchema),
+  assumptions: z.array(z.string()),
+  warnings: z.array(z.string()),
+  sources: z.array(
+    z.object({
+      evidenceId: z.string(),
+      label: z.string(),
+      confidence: z.number(),
+    }),
+  ),
 });
 
 /* -------------------------------------------------------------------------
@@ -481,6 +537,10 @@ export type ProcessingJob = z.infer<typeof ProcessingJobSchema>;
 export type Analytics = z.infer<typeof AnalyticsSchema>;
 export type CopilotMessage = z.infer<typeof CopilotMessageSchema>;
 export type SymbolSpec = z.infer<typeof SymbolSpecSchema>;
+export type CircuitSpec = z.infer<typeof CircuitSpecSchema>;
+export type CircuitComponent = z.infer<typeof CircuitComponentSchema>;
+export type CircuitConnection = z.infer<typeof CircuitConnectionSchema>;
+export type CircuitParameter = z.infer<typeof CircuitParameterSchema>;
 export type SearchHistoryEntry = z.infer<typeof SearchHistoryEntrySchema>;
 export type ActivityEvent = z.infer<typeof ActivityEventSchema>;
 export type AppNotification = z.infer<typeof AppNotificationSchema>;

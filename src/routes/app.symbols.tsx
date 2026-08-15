@@ -64,10 +64,10 @@ function SymbolPreview({ spec }: { spec: SymbolSpec }) {
         className="fill-muted-foreground"
         style={{ fontSize: 9 }}
       >
-        {spec.package}
+{spec.package}
       </text>
       {left.map((p, i) => (
-        <g key={p.number}>
+        <g key={p.pinNumber}>
           <line
             x1="60"
             y1={70 + i * 26}
@@ -88,7 +88,7 @@ function SymbolPreview({ spec }: { spec: SymbolSpec }) {
         </g>
       ))}
       {right.map((p, i) => (
-        <g key={p.number}>
+        <g key={p.pinNumber}>
           <line
             x1="220"
             y1={80 + i * 40}
@@ -100,6 +100,7 @@ function SymbolPreview({ spec }: { spec: SymbolSpec }) {
           <text
             x="264"
             y={84 + i * 40}
+            textAnchor="end"
             className="fill-foreground"
             style={{ fontSize: 10, fontFamily: "monospace" }}
           >
@@ -213,12 +214,12 @@ function SymbolStudio() {
                 <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border">
                   {spec.pins.map((p) => (
                     <li
-                      key={p.number}
+                      key={p.pinNumber}
                       className="flex items-center gap-3 bg-surface px-3 py-2 font-mono text-[11.5px]"
                     >
-                      <span className="w-4 text-muted-foreground">{p.number}</span>
+                      <span className="w-4 text-muted-foreground">{p.pinNumber}</span>
                       <span className="flex-1">{p.name}</span>
-                      <span className="text-muted-foreground">{p.electrical}</span>
+                      <span className="text-muted-foreground">{p.electricalType || p.electrical}</span>
                       <span className="text-primary">{p.evidenceId}</span>
                     </li>
                   ))}

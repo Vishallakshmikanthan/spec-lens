@@ -10,26 +10,65 @@ import { toast } from "sonner";
 const flow = ["Verified Evidence", "Symbol Specification", "Validation", "Compilation", "Preview"];
 
 function SymbolPreview({ spec }: { spec: SymbolSpec }) {
-  const left = spec.pins.filter((p) => p.side === "left");
-  const right = spec.pins.filter((p) => p.side === "right");
+  // --- Deterministic renderer calculations ---
+
+  // Separate pins by side
+  const leftPins = spec.pins.filter((p) => p.side === "left");
+  const rightPins = spec.pins.filter((p) => p.side === "right");
+  const topPins = spec.pins.filter((p) => p.side === "top");
+  const bottomPins = spec.pins.filter((p) => p.side === "bottom");
+
+  // Identify power pins
+  const powerPins = spec.pins.filter(
+    (p) => p.electricalType === "power" || p.electricalType === "ground",
+  );
+
+  // Determine input/output markers
+  const inputPins = spec.pins.filter((p) => p.type === "input");
+  const outputPins = spec.pins.filter((p) => p.type === "output");
+
+  // Calculate body dimensions based on pin distribution
+  // Body: fixed size with padding around pins
+  const bodyWidth = 140;
+  const bodyHeight = 160;
+
+  // Calculate pin positions deterministically based on pin count
+  // Vertical spacing for left/right pins
+  const verticalSpacing = 26;
+  const horizontalSpacing = 40;
+
+  // Determine the number of pins per side for layout
+  const leftPinCount = leftPins.length;
+  const rightPinCount = rightPins.length;
+
+  // Calculate total height needed
+  const totalHeight = Math.max(
+    1 + leftPinCount * verticalSpacing,
+    1 + rightPinCount * verticalSpacing,
+  );
+
+  // Calculate y offset to center pins vertically
+  const leftYOffset = 50 - (leftPinCount * verticalSpacing) / 2;
+  const rightYOffset = 80 - (rightPinCount * verticalSpacing) / 2;
+
   return (
     <svg
-      viewBox="0 0 320 220"
+      viewBox={`0 0 ${bodyWidth + 80} ${bodyHeight + 60}`}
       className="w-full"
       role="img"
       aria-label={`${spec.mpn} schematic symbol preview`}
     >
       <rect
-        x="100"
-        y="50"
-        width="120"
-        height="120"
+        x="20"
+        y="20"
+        width="140"
+        height="140"
         className="fill-surface-raised stroke-foreground/70"
         strokeWidth="1.5"
       />
       <text
-        x="160"
-        y="105"
+        x="90"
+        y="50"
         textAnchor="middle"
         className="fill-foreground"
         style={{ fontSize: 13, fontWeight: 600 }}
@@ -37,76 +76,175 @@ function SymbolPreview({ spec }: { spec: SymbolSpec }) {
         {spec.mpn}
       </text>
       <text
-        x="160"
-        y="122"
+        x="90"
+        y="72"
         textAnchor="middle"
         className="fill-muted-foreground"
         style={{ fontSize: 9 }}
       >
         {spec.package}
       </text>
-      {left.map((p, i) => (
-        <g key={p.number}>
+
+      {/* Left-side pins */}
+      {leftPins.map((p, i) => (
+        <g key={p.pinNumber}>
           <line
-            x1="60"
-            y1={70 + i * 26}
-            x2="100"
-            y2={70 + i * 26}
+            x1="20"
+            y1={leftYOffset + i * verticalSpacing}
+            x2="60"
+            y2={leftYOffset + i * verticalSpacing}
             className="stroke-primary"
             strokeWidth="1.2"
           />
           <text
             x="56"
-            y={74 + i * 26}
+            y={74 + i * verticalSpacing - 4}
             textAnchor="end"
             className="fill-foreground"
             style={{ fontSize: 10, fontFamily: "monospace" }}
           >
             {p.name}
           </text>
+          <text
+            x="40"
+            y={72 + i * verticalSpacing}
+            className="fill-foreground text-xs font-mono"
+            style={{ fontSize: 8 }}
+          >
+            {p.pinNumber}
+          </text>
         </g>
       ))}
-      {right.map((p, i) => (
-        <g key={p.number}>
+
+      {/* Right-side pins */}
+      {rightPins.map((p, i) => (
+        <g key={p.pinNumber}>
           <line
-            x1="220"
-            y1={80 + i * 40}
-            x2="260"
-            y2={80 + i * 40}
+            x1="160"
+            y1={rightYOffset + i * verticalSpacing}
+            x2="200"
+            y2={rightYOffset + i * verticalSpacing}
             className="stroke-primary"
             strokeWidth="1.2"
           />
           <text
-            x="264"
-            y={84 + i * 40}
-            textAnchor="end"
+            x="204"
+            y={74 + i * verticalSpacing - 4}
+            textAnchor="start"
             className="fill-foreground"
             style={{ fontSize: 10, fontFamily: "monospace" }}
           >
             {p.name}
           </text>
+          <text
+            x="164"
+            y={72 + i * verticalSpacing}
+            className="fill-foreground text-xs font-mono"
+            style={{ fontSize: 8 }}
+          >
+            {p.pinNumber}
+          </text>
         </g>
       ))}
-      <line x1="160" y1="20" x2="160" y2="50" className="stroke-primary" strokeWidth="1.2" />
-      <text
-        x="160"
-        y="16"
-        textAnchor="middle"
-        className="fill-foreground"
-        style={{ fontSize: 10, fontFamily: "monospace" }}
-      >
-        VCC
-      </text>
-      <line x1="160" y1="170" x2="160" y2="200" className="stroke-primary" strokeWidth="1.2" />
-      <text
-        x="160"
-        y="212"
-        textAnchor="middle"
-        className="fill-foreground"
-        style={{ fontSize: 10, fontFamily: "monospace" }}
-      >
-        GND
-      </text>
+
+      {/* Top pins */}
+      {topPins.map((p, i) => (
+        <g key={p.pinNumber}>
+          <line
+            x1={20 + i * 20}
+            y1="20"
+            x2={20 + i * 20}
+            y2="50"
+            className="stroke-primary"
+            strokeWidth="1.2"
+          />
+          <text
+            x={20 + i * 20}
+            y="56"
+            textAnchor="middle"
+            className="fill-foreground"
+            style={{ fontSize: 10, fontFamily: "monospace" }}
+          >
+            {p.name}
+          </text>
+          <text
+            x={20 + i * 20}
+            y="62"
+            className="fill-foreground text-xs font-mono"
+            style={{ fontSize: 8 }}
+          >
+            {p.pinNumber}
+          </text>
+        </g>
+      ))}
+
+      {/* Bottom pins */}
+      {bottomPins.map((p, i) => (
+        <g key={p.pinNumber}>
+          <line
+            x1={20 + i * 20}
+            y1="160"
+            x2={20 + i * 20}
+            y2="130"
+            className="stroke-primary"
+            strokeWidth="1.2"
+          />
+          <text
+            x={20 + i * 20}
+            y="124"
+            textAnchor="middle"
+            className="fill-foreground"
+            style={{ fontSize: 10, fontFamily: "monospace" }}
+          >
+            {p.name}
+          </text>
+          <text
+            x={20 + i * 20}
+            y="120"
+            className="fill-foreground text-xs font-mono"
+            style={{ fontSize: 8 }}
+          >
+            {p.pinNumber}
+          </text>
+        </g>
+      ))}
+
+      {/* Power pins highlight - VCC/GND labels */}
+      {powerPins.map((p, i) => (
+        <g key={p.pinNumber}>
+          <text
+            x={p.side === "top" ? 70 : p.side === "bottom" ? 70 : 56}
+            y={p.side === "top" ? 35 : p.side === "bottom" ? 125 : 74}
+            textAnchor={p.side === "top" || p.side === "bottom" ? "middle" : "end"}
+            className="fill-primary text-bold"
+          >
+            {p.name}
+          </text>
+        </g>
+      ))}
+
+      {/* Input/output markers */}
+      {inputPins.map((p) => (
+        <g key={p.pinNumber}>
+          <circle
+            cx={p.side === "left" ? 40 : p.side === "right" ? 180 : 30}
+            cy={p.side === "left" ? 50 + 13 : p.side === "right" ? 50 + 13 : 30}
+            r="4"
+            className="fill-warning"
+          />
+        </g>
+      ))}
+
+      {outputPins.map((p) => (
+        <g key={p.pinNumber}>
+          <circle
+            cx={p.side === "left" ? 40 : p.side === "right" ? 180 : 30}
+            cy={p.side === "left" ? 50 + 13 : p.side === "right" ? 50 + 13 : 30}
+            r="4"
+            className="fill-success"
+          />
+        </g>
+      ))}
     </svg>
   );
 }
@@ -215,19 +353,26 @@ function SymbolStudio() {
                 <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border">
                   {spec.pins.map(
                     (p: {
-                      number: string;
+                      pinNumber: string;
                       name: string;
+                      type: string;
+                      direction: string;
+                      x: number;
+                      y: number;
+                      length: number;
+                      electricalType: string;
+                      description: string;
                       electrical: string;
                       side: string;
                       evidenceId: string;
                     }) => (
                       <li
-                        key={p.number}
+                        key={p.pinNumber}
                         className="flex items-center gap-3 bg-surface px-3 py-2 font-mono text-[11.5px]"
                       >
-                        <span className="w-4 text-muted-foreground">{p.number}</span>
+                        <span className="w-4 text-muted-foreground">{p.pinNumber}</span>
                         <span className="flex-1">{p.name}</span>
-                        <span className="text-muted-foreground">{p.electrical}</span>
+                        <span className="text-muted-foreground">{p.electricalType || p.electrical}</span>
                         <span className="text-primary">{p.evidenceId}</span>
                       </li>
                     ),

@@ -265,8 +265,15 @@ export interface CopilotService {
 }
 
 export interface SymbolPin {
-  number: string;
+  pinNumber: string;
   name: string;
+  type: "signal" | "power" | "ground" | "input" | "output" | "nc";
+  direction: "in" | "out" | "bidirectional";
+  x: number;
+  y: number;
+  length: number;
+  electricalType: string;
+  description: string;
   electrical: string;
   side: "left" | "right" | "top" | "bottom";
   evidenceId: string;
@@ -279,6 +286,106 @@ export interface SymbolSpec {
   validation: { label: string; ok: boolean }[];
   stage: "spec" | "validation" | "compilation" | "preview";
 }
+
+export interface CircuitComponent {
+  id: string;
+  mpn: string;
+  reference: string;
+  value: string;
+  package: string;
+  symbol: string;
+  evidenceIds: string[];
+}
+
+export interface CircuitConnection {
+  from: string;
+  to: string;
+  net: string;
+}
+
+export interface CircuitParameter {
+  name: string;
+  value: string;
+  units: string;
+  formula?: string;
+  inputs?: Record<string, string>;
+  result?: string;
+}
+
+export interface CircuitSpec {
+  id: string;
+  mpn: string;
+  title: string;
+  description: string;
+  components: CircuitComponent[];
+  connections: CircuitConnection[];
+  nets: string[];
+  parameters: CircuitParameter[];
+  assumptions: string[];
+  warnings: string[];
+  sources: { evidenceId: string; label: string; confidence: number }[];
+}
+
+export type CircuitGenerationStatus = "idle" | "generating" | "completed" | "failed";
+
+export interface SymbolVersion {
+  version: string;
+  createdAt: string;
+  createdBy: string;
+  sourceEvidence: string;
+  validationStatus: "passed" | "failed" | "pending";
+  symbolSpec: SymbolSpec;
+}
+
+export interface CircuitVersion {
+  version: string;
+  createdAt: string;
+  createdBy: string;
+  sourceEvidence: string;
+  validationStatus: "passed" | "failed" | "pending";
+  circuitSpec: CircuitSpec;
+}
+
+export interface CircuitComponent {
+  id: string;
+  mpn: string;
+  reference: string;
+  value: string;
+  package: string;
+  symbol: string;
+  evidenceIds: string[];
+}
+
+export interface CircuitConnection {
+  from: string;
+  to: string;
+  net: string;
+}
+
+export interface CircuitParameter {
+  name: string;
+  value: string;
+  units: string;
+  formula?: string;
+  inputs?: Record<string, string>;
+  result?: string;
+}
+
+export interface CircuitSpec {
+  id: string;
+  mpn: string;
+  title: string;
+  description: string;
+  components: CircuitComponent[];
+  connections: CircuitConnection[];
+  nets: string[];
+  parameters: CircuitParameter[];
+  assumptions: string[];
+  warnings: string[];
+  sources: { evidenceId: string; label: string; confidence: number }[];
+}
+
+export type CircuitGenerationStatus = "idle" | "generating" | "completed" | "failed";
 
 export interface SearchHistoryEntry {
   id: string;
