@@ -104,3 +104,24 @@ export async function indexDatasheet(id: string): Promise<{ jobId: string }> {
     method: "POST",
   });
 }
+
+/**
+ * List all evidence records for the authenticated user's workspace.
+ * Optionally filtered by documentId, evidence type, manufacturer, page, or minConfidence.
+ */
+export async function listEvidence(filters?: { documentId?: string; types?: EvidenceType[]; manufacturer?: string; page?: number; minConfidence?: number }): Promise<Evidence[]> {
+  const params: Record<string, string | number | boolean | undefined> = {};
+  if (filters?.documentId) params.documentId = filters.documentId;
+  if (filters?.types?.length) params.types = filters.types.join(",");
+  if (filters?.manufacturer) params.manufacturer = filters.manufacturer;
+  if (filters?.page !== undefined) params.page = filters.page;
+  if (filters?.minConfidence !== undefined) params.minConfidence = filters.minConfidence;
+  return request<Evidence[]>("/api/evidence", { method: "GET", qs: params });
+}
+
+/**
+ * Get a specific evidence record by ID.
+ */
+export async function getEvidence(id: string): Promise<Evidence | undefined> {
+  return request<Evidence>(`/api/evidence/${id}`, { method: "GET" });
+}

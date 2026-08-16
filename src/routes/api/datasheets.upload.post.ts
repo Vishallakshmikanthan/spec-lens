@@ -24,6 +24,7 @@ import {
   type PdfProcessingResult,
   type PdfRenderConfig,
 } from "@/server/services/pdf";
+import { PdfLayoutService } from "@/server/services/layout/pdf-layout-service";
 
 const MAX_DATASHEET_SIZE_BYTES = 200 * 1024 * 1024;
 
@@ -393,7 +394,7 @@ export default defineEventHandler(async (event: H3Event) => {
           ));
       }
 
-      // Update the job progress to reflect that ingest and render are complete
+// Update the job progress to reflect that ingest and render are complete
       await db
         .update(processingJobs)
         .set({ progress: 70 }) // ingest + store + render = ~70% complete
@@ -404,9 +405,118 @@ export default defineEventHandler(async (event: H3Event) => {
         .update(processingStages)
         .set({ status: "completed", completedAt: new Date() })
         .where(and(
-          eq(processingStages.processingJobId, jobId),
           eq(processingStages.stage, "render"),
+          eq(processingStages.processingJobId, jobId),
         ));
+
+      // --- NEW: Run Layout Analysis Stage ---
+      // After render completes, analyze page layouts using PdfLayoutService
+      try {
+        const layoutService = new PdfLayoutService();
+
+        // Process each page with layout analysis
+        for (let i = 1; i <= pageCount; i++) {
+          const [page] = await db
+            .select({
+              width: datasheetPages.width,
+              height: datasheetPages.height,
+            })
+            .from(datasheetPages)
+            .where(
+              and(
+                eq(datasheetPages.datasheetId, datasheetId),
+                eq(datasheetPages.pageNumber, i),
+              ),
+            );
+
+          if (!page) continue;
+
+          const layoutAnalysis = await layoutService.getPageLayout(
+            String(activeWorkspace),
+            datasheetId,
+            i,
+          );
+
+          // Store layout-relevant info (we store text blocks info indirectly via page text)
+          // The key result is that page text and dimensions are now available for region detection
+          await db
+            .update(datasheetPages)
+            .set({
+              renderStatus: "done_with_layout",
+            })
+            .where(and(
+              eq(datasheetPages.datasheetId, datasheetId),
+              eq(datasheetPages.pageNumber, i),
+            ));
+        }
+
+        // Mark the layout stage as completed
+        await db
+          .update(processingStages)
+          .set({ status: "completed", completedAt: new Date() })
+          .where(and(
+            eq(processingStages.stage, "layout"),
+            eq(processingStages.processingJobId, jobId),
+          ));
+      } catch (layoutError: any) {
+        // If layout analysis fails, continue but mark as failed stage
+        console.error("Layout analysis error:", layoutError);
+
+        await db
+          .update(processingStages)
+          .set({ status: "failed", error: layoutError.message || "Layout analysis failed" })
+          .where(and(
+            eq(processingStages.stage, "layout"),
+            eq(processingStages.processingJobId, jobId),
+          ));
+      }
+
+      // --- NEW: Run Regions Detection Stage ---
+      // After layout completes, detect and classify visual regions on each page
+      try {
+        const { extractEvidence } = await import("@/services/evidence-extraction");
+
+        const extractionResult = await extractEvidence(
+          datasheetId,
+          String(activeWorkspace),
+          "evidence-detector-v1",
+        );
+
+        // Mark the regions stage as completed
+        await db
+          .update(processingStages)
+          .set({ status: "completed", completedAt: new Date() })
+          .where(and(
+            eq(processingStages.stage, "regions"),
+            eq(processingStages.processingJobId, jobId),
+          ));
+
+        // Log region-detection activity
+        await db.insert(activityEvents).values({
+          eventType: "detect",
+          entityType: "datasheet",
+          entityId: Number(datasheetId.replace("ds_", "")),
+          metadata: JSON.stringify({
+            detectorVersion: "evidence-detector-v1",
+            pagesProcessed: pageCount,
+            regionsDetected: extractionResult.newRecords,
+          }),
+          createdAt: new Date(),
+        });
+      } catch (regionsError: any) {
+        // If region detection fails, record the error but continue pipeline
+        console.error("Region detection error:", regionsError);
+
+        await db
+          .update(processingStages)
+          .set({ status: "failed", error: regionsError.message || "Region detection failed" })
+          .where(and(
+            eq(processingStages.stage, "regions"),
+            eq(processingStages.processingJobId, jobId),
+          ));
+
+        // Don't fail the whole pipeline - just mark this stage as failed
+      }
 
     } catch (pdfError: any) {
       // If PDF processing fails, record the error and mark pages as failed
