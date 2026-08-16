@@ -291,19 +291,19 @@ export function buildNemotronUserPrompt({
       const pageInfo = ev.page ? `Page ${ev.page}` : "Page N/A";
       prompt += `\n--- Evidence ${i + 1} ---\n`;
       prompt += `Title: ${ev.title}\n`;
-      prompt += `Type: ${ev.type}\n`;
+      prompt += `Type: ${ev.evidenceType || ev.type}\n`;
       prompt += `Manufacturer: ${ev.manufacturer}\n`;
       prompt += `Page: ${pageInfo}\n`;
       prompt += `BBox: [${ev.bbox?.x}, ${ev.bbox?.y}, ${ev.bbox?.w}, ${ev.bbox?.h}]\n`;
       prompt += `Confidence: ${ev.confidence}\n`;
       prompt += `Retrieval Score: ${ev.retrievalScore}\n`;
-      prompt += `Verification: ${ev.verificationState}\n`;
-      if (ev.caption) {
-        prompt += `Caption/Extracted Text: ${ev.caption}\n`;
+      prompt += `Verification: ${ev.verificationState || "unverified"}\n`;
+      if (ev.snippet || ev.caption) {
+        prompt += `Caption/Extracted Text: ${ev.snippet || ev.caption}\n`;
       }
       prompt += `Metadata: ${JSON.stringify(ev.metadata || {})}\n`;
     }
-    prompt += `\nTotal evidence items: ${evidenceContext.totalEvidenceCount}\n`;
+    prompt += `\nTotal evidence items: ${(evidenceContext.totalEvidenceCount ?? evidenceContext.totalItems) || 0}\n`;
   } else {
     prompt += "No relevant SpecLens evidence found for this question.\n";
   }

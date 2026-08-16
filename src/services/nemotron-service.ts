@@ -7,6 +7,10 @@
  *
  * When DEMO_MODE is true, falls back to MockCopilotService so the UI works
  * end-to-end without a Nemotron deployment.
+ *
+ * In real mode, errors are propagated (not silently fallen back to mock),
+ * per the SpecLens requirement that real mode must not pretend to work
+ * when the AI service is unavailable.
  */
 import { DEMO_MODE } from "@/lib/speclens/config";
 import type { CopilotAnswer, CopilotService } from "@/types/speclens";
@@ -37,8 +41,8 @@ export class NemotronCopilotService implements CopilotService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("Nemotin /api/copilot error:", response.status, errorText);
-        return new (await import("./mock-service")).MockCopilotService().ask(question);
+        console.error("Nemotron /api/copilot error:", response.status, errorText);
+        throw new Error(`Nemotron API returned ${response.status}: ${errorText}`);
       }
 
       const data = await response.json();
@@ -52,7 +56,7 @@ export class NemotronCopilotService implements CopilotService {
       };
     } catch (error) {
       console.error("NemotronCopilotService ask error:", error);
-      return new (await import("./mock-service")).MockCopilotService().ask(question);
+      throw error;
     }
   }
 

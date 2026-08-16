@@ -1,5 +1,6 @@
 import { createError, defineEventHandler, getCookie, setCookie } from "h3";
 import { getDb } from "@/lib/db";
+import { z } from "zod";
 import {
   copilotConversations,
   copilotMessages,
@@ -19,6 +20,7 @@ import {
   rerankEvidence,
   selectContextSet,
   buildEvidenceContext,
+  buildGroundingContext,
   getNemotronSystemPrompt,
   buildNemotronUserPrompt,
   parseNemotronResponse,
@@ -95,46 +97,64 @@ export default defineEventHandler(async (event: H3Event) => {
       });
     }
 
-    // --- Step 2: Parse request body ---
+    // --- Step 2: Parse and validate request body ---
     const body = await event.request.json();
-    const {
-      workspace: reqWorkspace,
-      question,
-      conversationId,
-      selectedEvidenceIds,
-      componentMpn,
-      searchFilters,
-    } = body as {
-      workspace?: string;
-      question: string;
-      conversationId?: string;
-      selectedEvidenceIds?: string[];
-      componentMpn?: string;
-      searchFilters?: Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
-    };
+
+    const requestSchema = z.object({
+      question: z.string().min(1).max(500),
+      conversationHistory: z
+        .array(
+          z.object({
+            role: z.enum(["user", "assistant"]),
+            content: z.string().max(2000),
+          })
+        )
+        .max(10)
+        .default([]),
+      workspaceId: z.string().optional(),
+    });
+
+    const validated = requestSchema.safeParse(body);
+
+    if (!validated.success) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: "Invalid request format",
+      });
+    }
+
+    const { question: validatedQuestion, conversationHistory, workspaceId: reqWorkspaceId } =
+      validated.data;
 
     // Use workspace from body or fall back to the authenticated user's workspace
-    const finalWorkspace = reqWorkspace || String(workspaceId);
+    // If workspaceId provided in request, use it; otherwise use session workspace
+    const finalWorkspace = reqWorkspaceId || String(workspaceId);
 
     // --- Step 3: Normalize the question ---
-    const normalizedQuestion = normalizeQuestion(question.trim());
+    const normalizedQuestion = normalizeQuestion(validatedQuestion.trim());
 
     // --- Step 4: Detect relevant component/entity ---
     const detectedComponent = await detectComponent(
       normalizedQuestion,
-      componentMpn,
+      undefined,
       finalWorkspace,
       db,
     );
 
     // --- Step 5: Run SpecLens retrieval ---
+    // Enforce max retrieval results
+    const MAX_RETRIEVAL_RESULTS = 50;
+    const retrievalStart = Date.now();
     const retrievalResults = await runRetrieval({
       question: normalizedQuestion,
       workspace: finalWorkspace,
       componentMpn: detectedComponent?.mpn || undefined,
-      selectedEvidenceIds,
+      selectedEvidenceIds: undefined,
       db,
-    });
+    }).then((results) => results.slice(0, MAX_RETRIEVAL_RESULTS));
+
+    const retrievalEnd = Date.now();
+    const retrievalLatencyMs = retrievalEnd - retrievalStart;
 
     // --- Step 6: Rerank evidence ---
     const rerankedEvidence = rerankEvidence(retrievalResults);
@@ -143,7 +163,7 @@ export default defineEventHandler(async (event: H3Event) => {
     const contextSet = selectContextSet(rerankedEvidence, 20);
 
     // --- Step 8: Build structured evidence context ---
-    const evidenceContext = buildEvidenceContext(contextSet);
+    const groundingContext = buildGroundingContext(contextSet);
 
     // --- Step 9: Check for sufficient evidence before calling Nemotron ---
     if (contextSet.length === 0) {
@@ -157,14 +177,16 @@ export default defineEventHandler(async (event: H3Event) => {
           confidence: 0.0,
           caveats: ["No relevant evidence found in indexed documents"],
           evidenceContext: {
-            totalItems: 0,
-            hasComponentContext: !!detectedComponent,
+            totalItems: groundingContext.totalItems,
+            hasComponentContext: groundingContext.componentContext?.mpn
+              ? true
+              : false,
           },
         },
       };
-    }
+}
 
-    // Check rate limiter
+// Check rate limiter
     const rateLimiter = new CopilotRateLimiter();
     const rateKey = `user:${userId}`;
     if (!rateLimiter.isAllowed(rateKey, 30, 60000)) {
@@ -173,6 +195,8 @@ export default defineEventHandler(async (event: H3Event) => {
         statusMessage: "Rate limit exceeded. Too many requests.",
       });
     }
+
+    const totalStart = Date.now();
 
     const conversationHistory = await getConversationHistory(conversationId, db);
 
@@ -184,10 +208,16 @@ export default defineEventHandler(async (event: H3Event) => {
     try {
       llmResponse = await callNemotron({
         question: normalizedQuestion,
-        evidenceContext,
+        evidenceContext: groundingContext,
         conversationHistory,
         componentContext: detectedComponent,
       });
+      const aiLatencyMs = Date.now() - totalStart;
+
+      // Observability: log retrieval and AI latency
+      console.info(
+        `[Copilot] retrieval=${retrievalLatencyMs}ms ai=${aiLatencyMs}ms sources=${contextSet.length} user=${userId}`
+      );
     } catch (nemotronError) {
       // If Nemotron fails, return error response rather than falling back to mock
       console.error("Nemotron call failed:", nemotronError);
@@ -200,8 +230,10 @@ export default defineEventHandler(async (event: H3Event) => {
           confidence: 0.0,
           caveats: ["AI service unavailable - evidence was retrieved successfully"],
           evidenceContext: {
-            totalItems: contextSet.length,
-            hasComponentContext: !!detectedComponent,
+            totalItems: groundingContext.totalItems,
+            hasComponentContext: groundingContext.componentContext?.mpn
+              ? true
+              : false,
           },
         },
       };
@@ -240,8 +272,10 @@ export default defineEventHandler(async (event: H3Event) => {
         caveats: llmResponse.caveats || [],
         // Include evidence context metadata for UI
         evidenceContext: {
-          totalItems: contextSet.length,
-          hasComponentContext: !!detectedComponent,
+          totalItems: groundingContext.totalItems,
+          hasComponentContext: groundingContext.componentContext?.mpn
+            ? true
+            : false,
         },
       },
     };
