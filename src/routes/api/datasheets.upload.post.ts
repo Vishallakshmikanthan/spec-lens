@@ -1,7 +1,16 @@
 import { defineEventHandler, H3Event, setHeader } from "h3";
 import { getDb } from "@/lib/db";
-import { users, workspaces, workspaceMembers, datasheets, processingJobs, processingStages, datasheetPages } from "@/database/schema";
-import { eq, and, sql } from "drizzle-orm";
+import {
+  users,
+  workspaces,
+  workspaceMembers,
+  datasheets,
+  processingJobs,
+  processingStages,
+  datasheetPages,
+  documentVersions,
+} from "@/database/schema";
+import { eq, and } from "drizzle-orm";
 import { getCurrentUserFromSession } from "@/server/auth";
 import { createError, v4 as uuidv4 } from "h3";
 import { hashBuffer, generateStorageKey } from "@/storage/local";
@@ -10,16 +19,18 @@ import { z } from "zod";
 import parse from "pdf-parse";
 import type { ProcessingJob, Datasheet } from "@/types/speclens";
 import { PROCESSING_STAGES, UPLOAD_STAGE_LABELS } from "@/lib/speclens/stages";
+import {
+  processPdf,
+  type PdfProcessingResult,
+  type PdfRenderConfig,
+} from "@/server/services/pdf";
 
-// Maximum file size: 200 MB (configurable)
 const MAX_DATASHEET_SIZE_BYTES = 200 * 1024 * 1024;
 
-// Valid MIME types for PDF
 const PDF_MIME_TYPES = ["application/pdf"];
 
 const MAX_DATASHEET_SIZE_MB = 200;
 
-// Canonical processing stage keys (matching PROCESSING_STAGES and DB schema)
 const STAGE_INGEST = "ingest";
 const STAGE_RENDER = "render";
 const STAGE_LAYOUT = "layout";
@@ -151,7 +162,6 @@ export default defineEventHandler(async (event: H3Event) => {
       });
     } catch (parseError) {
       // If PDF parsing fails, mark job as failed and clean up
-      await storageProvider.delete(storageKey);
       throw createError({
         statusCode: 400,
         statusMessage: "Invalid or corrupted PDF file.",
@@ -162,7 +172,6 @@ export default defineEventHandler(async (event: H3Event) => {
 
     // Validate page count - reject if unreasonably low or high
     if (pageCount === 0) {
-      await storageProvider.delete(storageKey);
       throw createError({
         statusCode: 400,
         statusMessage: "PDF has no pages (corrupted or empty document).",
@@ -170,7 +179,6 @@ export default defineEventHandler(async (event: H3Event) => {
     }
 
     if (pageCount > 500) {
-      await storageProvider.delete(storageKey);
       throw createError({
         statusCode: 400,
         statusMessage: `PDF has ${pageCount} pages, which exceeds the maximum supported of 500.`,
@@ -179,7 +187,6 @@ export default defineEventHandler(async (event: H3Event) => {
 
     // Check for encrypted/password-protected PDF
     if (pdfInfo.metadata && pdfInfo.metadata.isEncrypted) {
-      await storageProvider.delete(storageKey);
       throw createError({
         statusCode: 400,
         statusMessage: "Encrypted/password-protected PDFs are not supported. Please provide an unprotected PDF.",
@@ -236,13 +243,7 @@ export default defineEventHandler(async (event: H3Event) => {
     // 10. PDF metadata already extracted above (lines 138-222)
     // pageCount, pdfTitle, pageWidth, pageHeight are all available from the first parse
 
-    // 11. Extract page dimensions from PDF info
-    // (already extracted above in step 9)
-
-    // 13. Handle duplicate detection and versioning
-    const targetVersion = isDuplicate ? newVersion : 1;
-
-    // 14. Create the Datasheet database record
+    // 11. Create the Datasheet database record
     const [datasheet] = await db
       .insert(datasheets)
       .values({
@@ -261,7 +262,7 @@ export default defineEventHandler(async (event: H3Event) => {
         favorite: false,
         createdBy: user.id,
         checksum: fileHash,
-        version: targetVersion,
+        version: isDuplicate ? newVersion : 1,
       })
       .returning({
         id: datasheets.id,
@@ -271,10 +272,10 @@ export default defineEventHandler(async (event: H3Event) => {
         status: datasheets.status,
       });
 
-    // 15. Create a document version record
+    // 12. Create a document version record
     await db.insert(documentVersions).values({
       datasheetId: datasheetId,
-      version: targetVersion,
+      version: isDuplicate ? newVersion : 1,
       checksum: fileHash,
       storageKey,
       pageCount,
@@ -286,11 +287,11 @@ export default defineEventHandler(async (event: H3Event) => {
       createdBy: user.id,
     });
 
-    // 16. If this is a duplicate, mark the previous version appropriately
+    // 13. If this is a duplicate, mark the previous version appropriately
     if (isDuplicate && existingByChecksum) {
       await db
         .update(datasheets)
-        .set({ version: targetVersion, status: "processed" })
+        .set({ version: newVersion, status: "processed" })
         .where(eq(datasheets.id, existingByChecksum.id));
     }
 
@@ -298,35 +299,22 @@ export default defineEventHandler(async (event: H3Event) => {
     const jobId = `job_${uuidv4()}`;
 
     // Use canonical processing stages vocabulary from stages.ts
-    // validate and store are completed after upload; rest are pending
-    const initialStages = PROCESSING_STAGES.map((stage) => ({
-      key: stage.key,
-      label: stage.label,
-      state: stage.key === "validate" || stage.key === "store" ? "completed" : "pending",
-    }));
-
-    // Validate: first 2 stages (validate, store) are completed after upload
-    // Remaining stages pending and will be updated by background worker
-
-    await db.insert(processingJobs).values({
-      id: jobId,
-      workspaceId: activeWorkspace,
-      fileName: fileName,
-      storageKey,
-      mimeType: "application/pdf",
-      fileSize: fileSize,
-      mpn: null,
-      status: "processing",
-      progress: 30, // ingest + store = 30% complete
-      startedAt: new Date(),
-      completedAt: null,
-      error: null,
-      pages: pageCount,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+    // INGEST and RENDER are now real stages; layout/regions/embed/index/verify are placeholders
+    const initialStages = PROCESSING_STAGES.map((stage) => {
+      // Mark ingest and render as pending (they will be completed by this pipeline)
+      // Layout, regions, embed, index, verify are placeholders
+      let state: "pending" | "completed" = "pending";
+      if (stage.key === "validate" || stage.key === "store") {
+        state = "completed";
+      }
+      return {
+        key: stage.key,
+        label: stage.label,
+        state,
+      };
     });
 
-    // Create the processing stages entries using canonical vocabulary
+    // 14. Create processing stages entries using canonical vocabulary
     for (const stage of initialStages) {
       const stageStartedAt = stage.key === "validate" || stage.key === "store"
         ? new Date()
@@ -344,7 +332,7 @@ export default defineEventHandler(async (event: H3Event) => {
       });
     }
 
-    // 15. Create page records for every page in the PDF
+    // 15. Create page records for every page in the PDF (initially with pending status)
     const pagePromises = [];
 
     for (let i = 1; i <= pageCount; i++) {
@@ -355,15 +343,102 @@ export default defineEventHandler(async (event: H3Event) => {
           width: pageWidth,
           height: pageHeight,
           storageKey: null,
-          text: null, // Text extracted later (or empty if no text layer)
+          text: null,
+          renderStatus: "pending",
+          renderFormat: "webp",
         })
       );
     }
 
     await db.batch(pagePromises);
 
-    // 16. Calculate progress from actual completed stages
-    // progress = (completedStages / totalStages) * 100
+    // 16. Process the PDF: extract text and render all pages
+    // This is the core of the real PDF processing pipeline
+    try {
+      const renderConfig: PdfRenderConfig = {
+        dpi: 220,
+        format: "webp",
+        quality: 80,
+      };
+
+      // Process the PDF using the real service
+      const processingResult = await processPdf(
+        String(activeWorkspace),
+        datasheetId,
+        storageProvider,
+        renderConfig,
+      );
+
+      // Update each page record with extracted text and render information
+      for (let i = 0; i < pageCount; i++) {
+        const pageNumber = i + 1;
+        const pageText = processingResult.pageTexts[i]?.text ?? "";
+        const renderResult = processingResult.renderResults[i];
+        const storageKey = renderResult.storageKey;
+
+        await db
+          .update(datasheetPages)
+          .set({
+            text: pageText,
+            renderStatus: "done",
+            renderFormat: renderConfig.format ?? "webp",
+            renderedAt: new Date(),
+            renderWidth: renderResult.renderWidth,
+            renderHeight: renderResult.renderHeight,
+            storageKey: storageKey || null,
+          })
+          .where(and(
+            eq(datasheetPages.datasheetId, datasheetId),
+            eq(datasheetPages.pageNumber, pageNumber),
+          ));
+      }
+
+      // Update the job progress to reflect that ingest and render are complete
+      await db
+        .update(processingJobs)
+        .set({ progress: 70 }) // ingest + store + render = ~70% complete
+        .where(eq(processingJobs.id, jobId));
+
+      // Mark the render stage as completed
+      await db
+        .update(processingStages)
+        .set({ status: "completed", completedAt: new Date() })
+        .where(and(
+          eq(processingStages.processingJobId, jobId),
+          eq(processingStages.stage, "render"),
+        ));
+
+    } catch (pdfError: any) {
+      // If PDF processing fails, record the error and mark pages as failed
+      console.error("PDF processing error:", pdfError);
+
+      // Mark all page records as failed
+      for (let i = 1; i <= pageCount; i++) {
+        await db
+          .update(datasheetPages)
+          .set({
+            text: null,
+            renderStatus: "failed",
+            error: pdfError.message || "Unknown PDF processing error",
+          })
+          .where(and(
+            eq(datasheetPages.datasheetId, datasheetId),
+            eq(datasheetPages.pageNumber, i),
+          ));
+      }
+
+      // Update job status to failed
+      await db
+        .update(processingJobs)
+        .set({
+          status: "failed",
+          error: pdfError.message || "PDF processing failed",
+          completedAt: new Date(),
+        })
+        .where(eq(processingJobs.id, jobId));
+    }
+
+    // 17. Calculate progress from actual completed stages
     const [jobStages] = await db
       .select()
       .from(processingStages)
@@ -382,11 +457,10 @@ export default defineEventHandler(async (event: H3Event) => {
       .set({ progress: calculatedProgress })
       .where(eq(processingJobs.id, jobId));
 
-    // 17. Emit observability log (structured log)
-    // In a full implementation, this would go to a logging system
+    // 18. Emit observability log (structured log)
     console.log(`upload_received: workspace=${activeWorkspace}, datasheet=${datasheetId}, pages=${pageCount}, size=${fileSize}`);
 
-    // 18. Return structured response
+    // 19. Return structured response
     setHeader(event, "Content-Type", "application/json");
 
     return {
@@ -412,8 +486,6 @@ export default defineEventHandler(async (event: H3Event) => {
     };
   } catch (error: any) {
     // Clean up: if database creation failed but file was stored, clean up storage
-    // The error handling below handles most cases
-
     console.error("Upload error:", error);
 
     if (error.statusCode) {
