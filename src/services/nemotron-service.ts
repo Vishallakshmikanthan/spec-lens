@@ -11,17 +11,21 @@
 import { DEMO_MODE } from "@/lib/speclens/config";
 import type { CopilotAnswer, CopilotService } from "@/types/speclens";
 import { MockCopilotService } from "./mock-service";
+import { createNemotronProvider } from "./ai/nemotron-provider";
+import type { AIProvider } from "./ai/ai-provider";
 
 export class NemotronCopilotService implements CopilotService {
+  private aiProvider: AIProvider;
+
+  constructor() {
+    this.aiProvider = createNemotronProvider();
+  }
+
   async ask(question: string): Promise<CopilotAnswer> {
     if (DEMO_MODE) {
-      // Fall back to mock so UI is functional without a real backend
       return new (await import("./mock-service")).MockCopilotService().ask(question);
     }
 
-    // Call the real /api/copilot endpoint
-    // In a production TanStack Start environment, we use the relative path
-    // which the Vite proxy will redirect to the H3 endpoint.
     try {
       const response = await globalThis.fetch("/api/copilot", {
         method: "POST",
@@ -32,15 +36,12 @@ export class NemotronCopilotService implements CopilotService {
       });
 
       if (!response.ok) {
-        // If the endpoint returns an error (e.g., missing API key),
-        // fall back to mock rather than breaking the UI
         const errorText = await response.text();
         console.error("Nemotin /api/copilot error:", response.status, errorText);
         return new (await import("./mock-service")).MockCopilotService().ask(question);
       }
 
       const data = await response.json();
-      // Transform the endpoint response into CopilotAnswer format
       return {
         id: data.id || `m_${Math.random().toString(36).slice(2, 8)}`,
         role: "assistant",
@@ -51,7 +52,6 @@ export class NemotronCopilotService implements CopilotService {
       };
     } catch (error) {
       console.error("NemotronCopilotService ask error:", error);
-      // Fall back to mock on any error
       return new (await import("./mock-service")).MockCopilotService().ask(question);
     }
   }
@@ -66,7 +66,6 @@ export class NemotronCopilotService implements CopilotService {
       ];
     }
 
-    // In production, could return suggested questions based on available evidence
     return [
       "What is the supply voltage range?",
       "Which pin is VCC?",

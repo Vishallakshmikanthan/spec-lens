@@ -145,14 +145,23 @@ export default defineEventHandler(async (event: H3Event) => {
     // --- Step 8: Build structured evidence context ---
     const evidenceContext = buildEvidenceContext(contextSet);
 
-    // --- Step 9: Call Nemotron with evidence context ---
-    const nemotronKey = process.env["NEMOTRON_API_KEY"];
-    if (!nemotronKey) {
-      throw createError({
-        statusCode: 500,
-        statusMessage:
-          "Nemotron API key not configured. Set NEMOTRON_API_KEY environment variable.",
-      });
+    // --- Step 9: Check for sufficient evidence before calling Nemotron ---
+    if (contextSet.length === 0) {
+      // No evidence found - return grounded no-evidence response
+      return {
+        statusCode: 200,
+        body: {
+          answer:
+            "I couldn't find sufficient evidence in the indexed SpecLens documents to answer this reliably.",
+          sources: [],
+          confidence: 0.0,
+          caveats: ["No relevant evidence found in indexed documents"],
+          evidenceContext: {
+            totalItems: 0,
+            hasComponentContext: !!detectedComponent,
+          },
+        },
+      };
     }
 
     // Check rate limiter
@@ -167,12 +176,36 @@ export default defineEventHandler(async (event: H3Event) => {
 
     const conversationHistory = await getConversationHistory(conversationId, db);
 
-    const llmResponse = await callNemotron({
-      question: normalizedQuestion,
-      evidenceContext,
-      conversationHistory,
-      componentContext: detectedComponent,
-    });
+    let llmResponse: {
+      answer: string;
+      sources: unknown[];
+      caveats?: string[];
+    };
+    try {
+      llmResponse = await callNemotron({
+        question: normalizedQuestion,
+        evidenceContext,
+        conversationHistory,
+        componentContext: detectedComponent,
+      });
+    } catch (nemotronError) {
+      // If Nemotron fails, return error response rather than falling back to mock
+      console.error("Nemotron call failed:", nemotronError);
+      return {
+        statusCode: 502,
+        body: {
+          answer:
+            "I encountered an error while generating the grounded answer. The retrieved evidence is available, but the AI service is temporarily unavailable.",
+          sources: [],
+          confidence: 0.0,
+          caveats: ["AI service unavailable - evidence was retrieved successfully"],
+          evidenceContext: {
+            totalItems: contextSet.length,
+            hasComponentContext: !!detectedComponent,
+          },
+        },
+      };
+    }
 
     // --- Step 10: Validate citations ---
     const validationResult = validateCitations(llmResponse.sources, contextSet);
